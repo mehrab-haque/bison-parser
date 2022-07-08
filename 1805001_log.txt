@@ -1,0 +1,48 @@
+Line 1 : type_specifier : INT
+
+int
+
+Line 1 : declaration_list : ID
+
+x
+
+Line 1 : declaration_list : declaration_list COMMA ID
+
+x,y
+
+Line 1 : declaration_list : declaration_list COMMA ID
+
+x,y,z
+
+Line 1 : var_declaration : type_specifier declaration_list SEMICOLON
+
+int x,y,z;
+
+Line 1 : unit : var_declaration
+
+int x,y,z;
+
+Line 1 : program : unit
+
+int x,y,z;
+
+Line 1 : type_specifier : FLOAT
+
+float
+
+Line 1 : declaration_list : ID
+
+a
+
+Line 1 : var_declaration : type_specifier declaration_list SEMICOLON
+
+float a;
+
+Line 1 : unit : var_declaration
+
+float a;
+
+Line 1 : program : program unit
+
+int x,y,z; float a;
+
