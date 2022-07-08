@@ -17,6 +17,7 @@ class SymbolTable{
 		void enterScope();
 		void exitScope();
 		bool insertSymbol(string name,string type);
+		bool insertSymbol(SymbolInfo *symbol);
 		bool removeSymbol(string name);
 		SymbolInfo *lookup(string name);
 		SymbolInfo *lookupCurrent(string name);
@@ -97,7 +98,12 @@ bool SymbolTable::insertSymbol(string name,string type){
 	bool isInserted=this->currentScope->insertSymbol(newSymbol);
 	if(!isInserted)delete newSymbol;
 	return isInserted;
-	return true;
+}
+
+bool SymbolTable::insertSymbol(SymbolInfo *newSymbol){
+	bool isInserted=this->currentScope->insertSymbol(newSymbol);
+	if(!isInserted)delete newSymbol;
+	return isInserted;
 }
 
 void SymbolTable::exitScope(){

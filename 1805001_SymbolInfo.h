@@ -5,6 +5,7 @@
 #include<iostream>
 #include <string>
 #include<sstream>
+#include<vector>
 
 using namespace std;
 
@@ -14,6 +15,11 @@ using namespace std;
 class SymbolInfo{
 	string name;
 	string type;
+	string variant;
+	bool isFunc;
+
+	vector<SymbolInfo*> childSymbols;
+
 
 	stringstream printStream;
 
@@ -21,12 +27,18 @@ class SymbolInfo{
 	public:
 		SymbolInfo(string name,string type);
 		void setName(string name);
+		vector<SymbolInfo*> getChildSymbols();
 		string getName();
+		void addChildSymbol(SymbolInfo *symbol);
 		void setType(string type);
 		string getType();
 		void setNextSymbol(SymbolInfo *nextSymbol);
 		SymbolInfo *getNextSymbol();
 		string print();
+		void setVariant(string s);
+		string getVariant();
+		void setFunction(bool b);
+		bool isFunction();
 		~SymbolInfo();	
 };
 

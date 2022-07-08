@@ -33,6 +33,28 @@ void log(string rule,SymbolInfo *symbolInfo){
 	logFile<<"Line "<<lineCount<<" : "<<symbolInfo->getType()<<" : "<<rule<<endl<<endl<<symbolInfo->getName()<<endl<<endl;
 }
 
+void insertSymbolsToTable(SymbolInfo *type,vector<SymbolInfo*> symbols){
+	for(int i=0;i<symbols.size();i++){
+		SymbolInfo *newSymbol=new SymbolInfo(symbols[i]->getName(),"ID");
+		newSymbol->setVariant(type->getName());
+		bool isInserted=symbolTable->insertSymbol(newSymbol);
+		//if(!isInserted)
+	}
+
+}
+
+void insertFunctionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params){
+	SymbolInfo *funcSymbol=new SymbolInfo(funcId->getName(),"ID");
+	funcSymbol->setFunction(true);
+	funcSymbol->setVariant(type->getName());
+	for(int i=0;i<params.size();i++){
+		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
+		newParam->setVariant(params[i]->getVariant());
+		funcSymbol->addChildSymbol(newParam);
+	}
+	bool isInserted=symbolTable->insertSymbol(funcSymbol);
+}
+
 
 %}
 
@@ -83,9 +105,7 @@ unit : var_declaration
 	 }
      ;
 
-func_definition : type_specifier ID LPAREN {
-
-	} parameter_list RPAREN compound_statement
+func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
 	{
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_definition");
 		log("type_specifier ID LPAREN parameter_list RPAREN compound_statement",$$);
@@ -329,6 +349,7 @@ arguments : arguments COMMA logic_expression
 
 var_declaration : type_specifier declaration_list SEMICOLON
      {
+		insertSymbolsToTable($1,$2->getChildSymbols());
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName(),"var_declaration");
 		log("type_specifier declaration_list SEMICOLON",$$);
 	 }
@@ -337,6 +358,9 @@ var_declaration : type_specifier declaration_list SEMICOLON
 declaration_list : declaration_list COMMA ID
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"declaration_list");
+		for(int i=0;i<$1->getChildSymbols().size();i++)
+			$$->addChildSymbol($1->getChildSymbols()[i]);
+		$$->addChildSymbol($3);
 		log("declaration_list COMMA ID",$$);	
 	}
 	| declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
@@ -347,6 +371,7 @@ declaration_list : declaration_list COMMA ID
 	| ID
 	{
 		$$=new SymbolInfo($1->getName(),"declaration_list");
+		$$->addChildSymbol($1);
 		log("ID",$$);
 	}
 	| ID LTHIRD CONST_INT RTHIRD
@@ -358,11 +383,14 @@ declaration_list : declaration_list COMMA ID
      
 func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
 		{
+			insertFunctionToTable($1,$2,$4->getChildSymbols());
 			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_declaration");
 			log("type_specifier ID LPAREN parameter_list RPAREN SEMICOLON",$$);
 		}
 		| type_specifier ID LPAREN RPAREN SEMICOLON
 		{
+			vector<SymbolInfo*> symbols;
+			insertFunctionToTable($1,$2,symbols);
 			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_declaration");
 			log("type_specifier ID LPAREN RPAREN SEMICOLON",$$);
 		}
@@ -371,6 +399,10 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
 parameter_list  : parameter_list COMMA type_specifier ID
 		{
 			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+" "+$4->getName(),"parameter_list");
+			for(int i=0;i<$1->getChildSymbols().size();i++)
+				$$->addChildSymbol($1->getChildSymbols()[i]);
+			$4->setVariant($3->getName());
+			$$->addChildSymbol($4);
 			log("parameter_list COMMA type_specifier ID",$$);
 		}
 		| parameter_list COMMA type_specifier
@@ -381,6 +413,8 @@ parameter_list  : parameter_list COMMA type_specifier ID
  		| type_specifier ID
 		 {
 			$$=new SymbolInfo($1->getName()+" "+$2->getName(),"parameter_list");
+			$2->setVariant($1->getName());
+			$$->addChildSymbol($2);
 			log("type_specifier ID",$$);
 		 }
 		| type_specifier

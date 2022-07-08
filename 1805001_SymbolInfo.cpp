@@ -8,6 +8,7 @@ SymbolInfo::SymbolInfo(string name,string type){
 	this->name=name;
 	this->type=type;
 	this->nextSymbol=NULL;
+	this->isFunc=false;
 }
 
 string SymbolInfo::getName(){
@@ -40,4 +41,28 @@ string SymbolInfo::print(){
 	printStream<<"<"<<name<<","<<type<<">"<<endl;
 	printStream<<"########SYMBOL INFO END########"<<endl<<endl;
 	return printStream.str();
+}
+
+void SymbolInfo::addChildSymbol(SymbolInfo * symbol){
+	childSymbols.push_back(symbol);
+}
+
+vector<SymbolInfo *> SymbolInfo::getChildSymbols(){
+	return this->childSymbols;
+}
+
+void SymbolInfo::setVariant(string s){
+	this->variant=s;
+}
+
+string SymbolInfo::getVariant(){
+	return this->variant;
+}
+
+void SymbolInfo::setFunction(bool b){
+	this->isFunc=b;
+}
+
+bool SymbolInfo::isFunction(){
+	return this->isFunc;
 }
