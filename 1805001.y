@@ -52,7 +52,7 @@ start : program
 
 program : program unit
 	{
-		$$=new SymbolInfo($1->getName()+" "+$2->getName(),"program");
+		$$=new SymbolInfo($1->getName()+"\n"+$2->getName(),"program");
 		log("program unit",$$);
 	}
 	| unit
@@ -69,7 +69,8 @@ unit : var_declaration
 	 }
 	 | func_declaration
 	 {
-		 cout<<$1->getName();
+		 $$=new SymbolInfo($1->getName(),"unit");
+		log("func_declaration",$$);
 	 }
      ;
 
@@ -103,13 +104,37 @@ declaration_list : declaration_list COMMA ID
 	;
      
 func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
+		{
+			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_declaration");
+			log("type_specifier ID LPAREN parameter_list RPAREN SEMICOLON",$$);
+		}
 		| type_specifier ID LPAREN RPAREN SEMICOLON
+		{
+			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_declaration");
+			log("type_specifier ID LPAREN RPAREN SEMICOLON",$$);
+		}
 		;
 
 parameter_list  : parameter_list COMMA type_specifier ID
+		{
+			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+" "+$4->getName(),"parameter_list");
+			log("parameter_list COMMA type_specifier ID",$$);
+		}
 		| parameter_list COMMA type_specifier
+		{
+			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"parameter_list");
+			log("parameter_list COMMA type_specifier",$$);
+		}
  		| type_specifier ID
+		 {
+			$$=new SymbolInfo($1->getName()+" "+$2->getName(),"parameter_list");
+			log("type_specifier ID",$$);
+		 }
 		| type_specifier
+		{
+			$$=new SymbolInfo($1->getName(),"parameter_list");
+			log("type_specifier",$$);
+		}
  		;
 
  		 

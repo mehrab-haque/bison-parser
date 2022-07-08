@@ -1,1 +1,2 @@
 int x,y,z; float a;
+void foo();

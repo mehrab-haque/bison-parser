@@ -44,5 +44,24 @@ float a;
 
 Line 1 : program : program unit
 
-int x,y,z; float a;
+int x,y,z;
+float a;
+
+Line 2 : type_specifier : FLOAT
+
+void
+
+Line 2 : func_declaration : type_specifier ID LPAREN RPAREN SEMICOLON
+
+void foo();
+
+Line 2 : unit : func_declaration
+
+void foo();
+
+Line 2 : program : program unit
+
+int x,y,z;
+float a;
+void foo();
 
