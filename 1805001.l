@@ -63,6 +63,19 @@ SingleQuot \'
 }
 
 
+{Integer} {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"CONST_INT");
+    yylval=(YYSTYPE)symbolInfo;
+    return CONST_INT;
+}
+
+{Float} {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"CONST_FLOAT");
+    yylval=(YYSTYPE)symbolInfo;
+    return CONST_FLOAT;
+}
+
+
 ("(") {
     SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"LPAREN");
     yylval=(YYSTYPE)symbolInfo;
@@ -73,6 +86,18 @@ SingleQuot \'
     SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"RPAREN");
     yylval=(YYSTYPE)symbolInfo;
     return RPAREN;
+}
+
+("[") {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"LTHIRD");
+    yylval=(YYSTYPE)symbolInfo;
+    return LTHIRD;
+}
+
+("]") {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"RTHIRD");
+    yylval=(YYSTYPE)symbolInfo;
+    return RTHIRD;
 }
 
 

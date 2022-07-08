@@ -65,3 +65,38 @@ int x,y,z;
 float a;
 void foo();
 
+Line 3 : type_specifier : INT
+
+int
+
+Line 3 : declaration_list : ID LTHIRD CONST_INT RTHIRD
+
+a[2]
+
+Line 3 : declaration_list : declaration_list COMMA ID
+
+a[2],c
+
+Line 3 : declaration_list : declaration_list COMMA ID
+
+a[2],c,i
+
+Line 3 : declaration_list : declaration_list COMMA ID
+
+a[2],c,i,j
+
+Line 3 : var_declaration : type_specifier declaration_list SEMICOLON
+
+int a[2],c,i,j;
+
+Line 3 : unit : var_declaration
+
+int a[2],c,i,j;
+
+Line 3 : program : program unit
+
+int x,y,z;
+float a;
+void foo();
+int a[2],c,i,j;
+
