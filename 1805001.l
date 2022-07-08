@@ -50,6 +50,54 @@ SingleQuot \'
     return FLOAT;
 }
 
+"return" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"RETURN");
+    yylval=(YYSTYPE)symbolInfo;
+    return RETURN;
+}
+
+("+"|"-") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"ADDOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return ADDOP;
+}
+
+("*"|"/"|"%") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"MULOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return MULOP;
+}
+
+("++"|"--") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"INCOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return INCOP;
+}
+
+("<"|"<="|">"|">="|"=="|"!=") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"RELOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return RELOP;
+}
+
+("=") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"ASSIGNOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return ASSIGNOP;
+}
+
+("&&"|"||") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"LOGICOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return LOGICOP;
+}
+
+("!") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"NOT");
+    yylval=(YYSTYPE)symbolInfo;
+    return NOT;
+}
+
 "," {
     SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"COMMA");
     yylval=(YYSTYPE)symbolInfo;
@@ -98,6 +146,18 @@ SingleQuot \'
     SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"RTHIRD");
     yylval=(YYSTYPE)symbolInfo;
     return RTHIRD;
+}
+
+("{") {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"LCURL");
+    yylval=(YYSTYPE)symbolInfo;
+    return LCURL;
+}
+
+("}") {
+    SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"RCURL");
+    yylval=(YYSTYPE)symbolInfo;
+    return RCURL;
 }
 
 
