@@ -18,9 +18,14 @@ extern FILE *yyin;
 
 int lineCount=1;
 
-ofstream logFile;
+ofstream logFile,errorFile;
 
 SymbolTable *symbolTable;
+
+const string GROUP_VARIABLE="var";
+const string GROUP_FUNCTION_DECLARATION="func_dec";
+const string GROUP_FUNCTION_DEFINITION="func_def";
+const string GROUP_ARRAY="array";
 
 
 
@@ -33,26 +38,56 @@ void log(string rule,SymbolInfo *symbolInfo){
 	logFile<<"Line "<<lineCount<<" : "<<symbolInfo->getType()<<" : "<<rule<<endl<<endl<<symbolInfo->getName()<<endl<<endl;
 }
 
-void insertSymbolsToTable(SymbolInfo *type,vector<SymbolInfo*> symbols){
+void insertVariablesToTable(SymbolInfo *type,vector<SymbolInfo*> symbols,string code){
 	for(int i=0;i<symbols.size();i++){
 		SymbolInfo *newSymbol=new SymbolInfo(symbols[i]->getName(),"ID");
 		newSymbol->setVariant(type->getName());
+		newSymbol->setGroup(GROUP_VARIABLE);
 		bool isInserted=symbolTable->insertSymbol(newSymbol);
-		//if(!isInserted)
+		if(!isInserted){
+			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+		}
 	}
 
 }
 
-void insertFunctionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params){
+void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
 	SymbolInfo *funcSymbol=new SymbolInfo(funcId->getName(),"ID");
-	funcSymbol->setFunction(true);
 	funcSymbol->setVariant(type->getName());
+	funcSymbol->setGroup(GROUP_FUNCTION_DECLARATION);
 	for(int i=0;i<params.size();i++){
 		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
 		newParam->setVariant(params[i]->getVariant());
 		funcSymbol->addChildSymbol(newParam);
 	}
 	bool isInserted=symbolTable->insertSymbol(funcSymbol);
+	if(!isInserted){
+		logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
+	}
+}
+
+
+void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
+	SymbolInfo *funcSymbol=new SymbolInfo(funcId->getName(),"ID");
+	funcSymbol->setVariant(type->getName());
+	funcSymbol->setGroup(GROUP_FUNCTION_DECLARATION);
+	for(int i=0;i<params.size();i++){
+		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
+		newParam->setVariant(params[i]->getVariant());
+		funcSymbol->addChildSymbol(newParam);
+	}
+	SymbolInfo *foundSymbol=symbolTable->lookup(funcId->getName());
+	if(foundSymbol==NULL)
+		symbolTable->insertSymbol(funcSymbol);
+	else if(foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION))
+		foundSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
+	else{
+		logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
+	}
+	symbolTable->exitScope();
 }
 
 
@@ -108,11 +143,14 @@ unit : var_declaration
 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
 	{
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_definition");
+		insertFunctionDefinitionToTable($1,$2,$4->getChildSymbols(),$$->getName());
 		log("type_specifier ID LPAREN parameter_list RPAREN compound_statement",$$);
 	}
 	| type_specifier ID LPAREN RPAREN compound_statement
 	{
+		vector<SymbolInfo*> symbols;
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_definition");
+		insertFunctionDefinitionToTable($1,$2,symbols,$$->getName());
 		log("type_specifier ID LPAREN RPAREN compound_statement",$$);
 	}
 	;
@@ -349,8 +387,8 @@ arguments : arguments COMMA logic_expression
 
 var_declaration : type_specifier declaration_list SEMICOLON
      {
-		insertSymbolsToTable($1,$2->getChildSymbols());
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName(),"var_declaration");
+		insertVariablesToTable($1,$2->getChildSymbols(),$$->getName());
 		log("type_specifier declaration_list SEMICOLON",$$);
 	 }
  	 ;
@@ -383,15 +421,16 @@ declaration_list : declaration_list COMMA ID
      
 func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
 		{
-			insertFunctionToTable($1,$2,$4->getChildSymbols());
+			symbolTable->exitScope();
 			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_declaration");
+			insertFunctionDeclarationToTable($1,$2,$4->getChildSymbols(),$$->getName());
 			log("type_specifier ID LPAREN parameter_list RPAREN SEMICOLON",$$);
 		}
 		| type_specifier ID LPAREN RPAREN SEMICOLON
 		{
 			vector<SymbolInfo*> symbols;
-			insertFunctionToTable($1,$2,symbols);
 			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_declaration");
+			insertFunctionDeclarationToTable($1,$2,symbols,$$->getName());
 			log("type_specifier ID LPAREN RPAREN SEMICOLON",$$);
 		}
 		;
@@ -402,24 +441,54 @@ parameter_list  : parameter_list COMMA type_specifier ID
 			for(int i=0;i<$1->getChildSymbols().size();i++)
 				$$->addChildSymbol($1->getChildSymbols()[i]);
 			$4->setVariant($3->getName());
+			bool isInserted=symbolTable->insertSymbol($4);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<endl<<endl;
+			}
 			$$->addChildSymbol($4);
 			log("parameter_list COMMA type_specifier ID",$$);
 		}
 		| parameter_list COMMA type_specifier
 		{
 			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"parameter_list");
+			for(int i=0;i<$1->getChildSymbols().size();i++)
+				$$->addChildSymbol($1->getChildSymbols()[i]);
+			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			newSymbol->setVariant($3->getName());
+			bool isInserted=symbolTable->insertSymbol(newSymbol);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			}
+			$$->addChildSymbol(newSymbol);
 			log("parameter_list COMMA type_specifier",$$);
 		}
  		| type_specifier ID
 		 {
+			symbolTable->enterScope();
 			$$=new SymbolInfo($1->getName()+" "+$2->getName(),"parameter_list");
 			$2->setVariant($1->getName());
+			bool isInserted=symbolTable->insertSymbol($2);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<endl<<endl;
+			}
 			$$->addChildSymbol($2);
 			log("type_specifier ID",$$);
 		 }
 		| type_specifier
 		{
+			symbolTable->enterScope();
 			$$=new SymbolInfo($1->getName(),"parameter_list");
+			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			newSymbol->setVariant($1->getName());
+			bool isInserted=symbolTable->insertSymbol(newSymbol);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			}
+			$$->addChildSymbol(newSymbol);
 			log("type_specifier",$$);
 		}
  		;
@@ -456,9 +525,10 @@ int main(int argc,char *argv[])
 		exit(1);
 	}
 
-	symbolTable=new SymbolTable(17);
+	symbolTable=new SymbolTable(7);
 
 	logFile.open("1805001_log.txt");
+	errorFile.open("1805001_error.txt");
 
 	yyin=fp;
 	yyparse();

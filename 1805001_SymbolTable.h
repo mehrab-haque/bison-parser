@@ -96,13 +96,13 @@ bool SymbolTable::removeSymbol(string name){
 bool SymbolTable::insertSymbol(string name,string type){
 	SymbolInfo *newSymbol=new SymbolInfo(name,type);
 	bool isInserted=this->currentScope->insertSymbol(newSymbol);
-	if(!isInserted)delete newSymbol;
+	//if(!isInserted)delete newSymbol;
 	return isInserted;
 }
 
 bool SymbolTable::insertSymbol(SymbolInfo *newSymbol){
 	bool isInserted=this->currentScope->insertSymbol(newSymbol);
-	if(!isInserted)delete newSymbol;
+	//if(!isInserted)delete newSymbol;
 	return isInserted;
 }
 

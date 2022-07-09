@@ -8,7 +8,6 @@ SymbolInfo::SymbolInfo(string name,string type){
 	this->name=name;
 	this->type=type;
 	this->nextSymbol=NULL;
-	this->isFunc=false;
 }
 
 string SymbolInfo::getName(){
@@ -59,10 +58,10 @@ string SymbolInfo::getVariant(){
 	return this->variant;
 }
 
-void SymbolInfo::setFunction(bool b){
-	this->isFunc=b;
+void SymbolInfo::setGroup(string group){
+	this->group=group;
 }
 
-bool SymbolInfo::isFunction(){
-	return this->isFunc;
+string SymbolInfo::getGroup(){
+	return this->group;
 }

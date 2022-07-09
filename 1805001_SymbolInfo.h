@@ -16,7 +16,7 @@ class SymbolInfo{
 	string name;
 	string type;
 	string variant;
-	bool isFunc;
+	string group;
 
 	vector<SymbolInfo*> childSymbols;
 
@@ -37,8 +37,8 @@ class SymbolInfo{
 		string print();
 		void setVariant(string s);
 		string getVariant();
-		void setFunction(bool b);
-		bool isFunction();
+		void setGroup(string group);
+		string getGroup();
 		~SymbolInfo();	
 };
 
