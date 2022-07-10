@@ -32,6 +32,30 @@ SingleQuot \'
   
 %%
 
+"if" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"IF");
+    yylval=(YYSTYPE)symbolInfo;
+    return IF;
+}
+
+"else" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"ELSE");
+    yylval=(YYSTYPE)symbolInfo;
+    return ELSE;
+}
+
+"for" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"FOR");
+    yylval=(YYSTYPE)symbolInfo;
+    return FOR;
+}
+
+"while" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"WHILE");
+    yylval=(YYSTYPE)symbolInfo;
+    return WHILE;
+}
+
 "printf" {
     SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"PRINTLN");
     yylval=(YYSTYPE)symbolInfo;
