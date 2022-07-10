@@ -10,196 +10,279 @@ Line 1 : parameter_list : type_specifier ID
 
 int a
 
-Line 1 : compound_statement : LCURL RCURL
+Line 1 : type_specifier : FLOAT
+
+float
+
+Line 1 : parameter_list : parameter_list COMMA type_specifier ID
+
+int a,float b
+
+Line 1 : type_specifier : INT
+
+int
+
+Line 1 : parameter_list : parameter_list COMMA type_specifier ID
+
+int a,float b,int c
+
+Line 3 : compound_statement : LCURL RCURL
 
 {}
 
 ScopeTable# 1.1
+0 --> < b : ID >
+1 --> < c : ID >
 6 --> < a : ID >
 
 ScopeTable# 1
 
-Line 1 : func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
+Line 3 : func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
 
-int d(int a){}
+int func(int a,float b,int c){}
 
-Line 1 : unit : func_definition
+Line 3 : unit : func_definition
 
-int d(int a){}
+int func(int a,float b,int c){}
 
-Line 1 : program : unit
+Line 3 : program : unit
 
-int d(int a){}
+int func(int a,float b,int c){}
 
-Line 3 : type_specifier : INT
+Line 5 : type_specifier : INT
 
 int
 
-Line 4 : type_specifier : FLOAT
+Line 6 : type_specifier : INT
+
+int
+
+Line 6 : declaration_list : ID
+
+a
+
+Line 6 : var_declaration : type_specifier declaration_list SEMICOLON
+
+int a;
+
+Line 6 : statement : var_declaration
+
+int a;
+
+Line 6 : statements : statement
+
+int a;
+
+Line 7 : type_specifier : FLOAT
 
 float
 
-Line 4 : declaration_list : ID
+Line 7 : declaration_list : ID
+
+b
+
+Line 7 : var_declaration : type_specifier declaration_list SEMICOLON
+
+float b;
+
+Line 7 : statement : var_declaration
+
+float b;
+
+Line 7 : statements : statements statement
+
+int a;
+float b;
+
+Line 8 : variable : ID
 
 a
 
-Line 4 : declaration_list : declaration_list COMMA ID
+Line 8 : factor : variable
+
+a
+
+Line 8 : unary_expression : factor
+
+a
+
+Line 8 : term : unary_expression
+
+a
+
+Line 8 : simple_expression : simple_expression
+
+a
+
+Line 8 : rel_expression : simple_expression
+
+a
+
+Line 8 : logic_expression : rel_expression
+
+a
+
+Line 8 : arguments : logic_expression
+
+a
+
+Line 8 : variable : ID
+
+b
+
+Line 8 : factor : variable
+
+b
+
+Line 8 : unary_expression : factor
+
+b
+
+Line 8 : term : unary_expression
+
+b
+
+Line 8 : simple_expression : simple_expression
+
+b
+
+Line 8 : rel_expression : simple_expression
+
+b
+
+Line 8 : logic_expression : rel_expression
+
+b
+
+Line 8 : arguments : arguments COMMA logic_expression
 
 a,b
 
-Line 4 : declaration_list : declaration_list COMMA ID
-
-a,b,c
-
-Line 4 : var_declaration : type_specifier declaration_list SEMICOLON
-
-float a,b,c;
-
-Line 4 : statement : var_declaration
-
-float a,b,c;
-
-Line 4 : statements : statement
-
-float a,b,c;
-
-Line 5 : variable : ID
+Line 8 : variable : ID
 
 a
 
-Line 5 : factor : CONST_INT
+Line 8 : factor : variable
 
-2
+a
 
-Line 5 : unary_expression : factor
+Line 8 : unary_expression : factor
 
-2
+a
 
-Line 5 : term : unary_expression
+Line 8 : term : unary_expression
 
-2
+a
 
-Line 5 : simple_expression : simple_expression
+Line 8 : simple_expression : simple_expression
 
-2
+a
 
-Line 5 : rel_expression : simple_expression
+Line 8 : rel_expression : simple_expression
 
-2
+a
 
-Line 5 : logic_expression : rel_expression
+Line 8 : logic_expression : rel_expression
 
-2
+a
 
-Line 5 : arguments : logic_expression
+Line 8 : arguments : arguments COMMA logic_expression
 
-2
+a,b,a
 
-Line 5 : argument_list : arguments
+Line 8 : argument_list : arguments
 
-2
+a,b,a
 
-Line 5 : factor : ID LPAREN argument_list RPAREN
+Line 8 : factor : ID LPAREN argument_list RPAREN
 
-d(2)
+func(a,b,a)
 
-Line 5 : unary_expression : factor
+Line 8 : unary_expression : factor
 
-d(2)
+func(a,b,a)
 
-Line 5 : term : unary_expression
+Line 8 : term : unary_expression
 
-d(2)
+func(a,b,a)
 
-Line 5 : simple_expression : simple_expression
+Line 8 : simple_expression : simple_expression
 
-d(2)
+func(a,b,a)
 
-Line 5 : factor : CONST_FLOAT
+Line 8 : rel_expression : simple_expression
 
-2.5
+func(a,b,a)
 
-Line 5 : unary_expression : factor
+Line 8 : logic_expression : rel_expression
 
-2.5
+func(a,b,a)
 
-Line 5 : term : unary_expression
+Line 8 : expression : logic_expression
 
-2.5
+func(a,b,a)
 
-Line 5 : factor : CONST_INT
+Line 8 : expression_statement : expression SEMICOLON 
 
-2
+func(a,b,a);
 
-Line 5 : unary_expression : factor
+Line 8 : statement : expression_statement
 
-2
+func(a,b,a);
 
-Line 5 : term : term MULOP unary_expression
+Line 8 : statements : statements statement
 
-2.5/2
+int a;
+float b;
+func(a,b,a);
 
-Line 5 : simple_expression : simple_expression ADDOP term
-
-d(2)+2.5/2
-
-Line 5 : rel_expression : simple_expression
-
-d(2)+2.5/2
-
-Line 5 : logic_expression : rel_expression
-
-d(2)+2.5/2
-
-Line 5 : expression : variable ASSIGNOP logic_expression
-
-a=d(2)+2.5/2
-
-Line 5 : expression_statement : expression SEMICOLON 
-
-a=d(2)+2.5/2;
-
-Line 5 : statement : expression_statement
-
-a=d(2)+2.5/2;
-
-Line 5 : statements : statements statement
-
-float a,b,c;
-a=d(2)+2.5/2;
-
-Line 6 : compound_statement : LCURL statements RCURL
+Line 9 : compound_statement : LCURL statements RCURL
 
 {
-float a,b,c;
-a=d(2)+2.5/2;
+int a;
+float b;
+func(a,b,a);
 }
 
-ScopeTable# 1
+ScopeTable# 1.2
 0 --> < b : ID >
-1 --> < c : ID >
-2 --> < d : ID >
 6 --> < a : ID >
 
-Line 6 : func_definition : type_specifier ID LPAREN RPAREN compound_statement
+ScopeTable# 1
+0 --> < func : ID >
+
+Line 9 : func_definition : type_specifier ID LPAREN RPAREN compound_statement
 
 int main(){
-float a,b,c;
-a=d(2)+2.5/2;
+int a;
+float b;
+func(a,b,a);
 }
 
-Line 6 : unit : func_definition
+Line 9 : unit : func_definition
 
 int main(){
-float a,b,c;
-a=d(2)+2.5/2;
+int a;
+float b;
+func(a,b,a);
 }
 
-Line 6 : program : program unit
+Line 9 : program : program unit
 
-int d(int a){}
+int func(int a,float b,int c){}
 int main(){
-float a,b,c;
-a=d(2)+2.5/2;
+int a;
+float b;
+func(a,b,a);
 }
 
+Line 9 : program : program
+
+
+
+ScopeTable# 1
+0 --> < func : ID >
+5 --> < main : ID >
+
+Total lines: 9
+Total errors: 0

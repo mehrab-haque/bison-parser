@@ -1,6 +1,9 @@
-int d(int a){}
+int func(int a,float b,int c){
+
+}
 
 int main(){
-    float a,b,c;
-    a=d(2)+2.5/2;
+    int a;
+    float b;
+    func(a,b,a);
 }

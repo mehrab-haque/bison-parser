@@ -18,8 +18,8 @@
 
 using namespace std;
 
-extern int lineCount;
-int tmpLineCount,errorCount=0;
+extern int lineCount,errorCount;
+int tmpLineCount;
 string stringBody;
 string logStringBody;
 string commentBody;
