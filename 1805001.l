@@ -32,6 +32,12 @@ SingleQuot \'
   
 %%
 
+"printf" {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"PRINTLN");
+    yylval=(YYSTYPE)symbolInfo;
+    return PRINTLN;
+}
+
 "void" {
     SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"VOID");
     yylval=(YYSTYPE)symbolInfo;
@@ -68,10 +74,16 @@ SingleQuot \'
     return MULOP;
 }
 
-("++"|"--") {
+("++") {
     SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"INCOP");
     yylval=(YYSTYPE)symbolInfo;
     return INCOP;
+}
+
+("--") {
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"DECOP");
+    yylval=(YYSTYPE)symbolInfo;
+    return DECOP;
 }
 
 ("<"|"<="|">"|">="|"=="|"!=") {
@@ -109,7 +121,6 @@ SingleQuot \'
     yylval=(YYSTYPE)symbolInfo;
     return ID;
 }
-
 
 {Integer} {
     SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"CONST_INT");

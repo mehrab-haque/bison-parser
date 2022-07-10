@@ -27,6 +27,11 @@ const string GROUP_FUNCTION_DECLARATION="func_dec";
 const string GROUP_FUNCTION_DEFINITION="func_def";
 const string GROUP_ARRAY="array";
 
+const string VARIANT_INT="int";
+const string VARIANT_FLOAT="float";
+const string VARIANT_VOID="void";
+const string VARIANT_UNDEFINED="undefined";
+
 
 
 void yyerror(char *s)
@@ -42,7 +47,7 @@ void insertVariablesToTable(SymbolInfo *type,vector<SymbolInfo*> symbols,string 
 	for(int i=0;i<symbols.size();i++){
 		SymbolInfo *newSymbol=new SymbolInfo(symbols[i]->getName(),"ID");
 		newSymbol->setVariant(type->getName());
-		newSymbol->setGroup(GROUP_VARIABLE);
+		newSymbol->setGroup(symbols[i]->getGroup());
 		bool isInserted=symbolTable->insertSymbol(newSymbol);
 		if(!isInserted){
 			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<code<<endl<<endl;
@@ -59,6 +64,7 @@ void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector
 	for(int i=0;i<params.size();i++){
 		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
 		newParam->setVariant(params[i]->getVariant());
+		newParam->setGroup(params[i]->getGroup());
 		funcSymbol->addChildSymbol(newParam);
 	}
 	bool isInserted=symbolTable->insertSymbol(funcSymbol);
@@ -70,24 +76,42 @@ void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector
 
 
 void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
+	logFile<<symbolTable->printAllScopes();
+	symbolTable->exitScope();
 	SymbolInfo *funcSymbol=new SymbolInfo(funcId->getName(),"ID");
 	funcSymbol->setVariant(type->getName());
-	funcSymbol->setGroup(GROUP_FUNCTION_DECLARATION);
+	funcSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
 	for(int i=0;i<params.size();i++){
 		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
 		newParam->setVariant(params[i]->getVariant());
+		newParam->setGroup(params[i]->getGroup());
 		funcSymbol->addChildSymbol(newParam);
 	}
 	SymbolInfo *foundSymbol=symbolTable->lookup(funcId->getName());
 	if(foundSymbol==NULL)
 		symbolTable->insertSymbol(funcSymbol);
-	else if(foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION))
-		foundSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
+	else if(foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0){
+		if(params.size()!=foundSymbol->getChildSymbols().size()){
+			logFile<<"Error at line "<<lineCount<<": Number of parameters doesn't match declaration of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Number of parameters doesn't match declaration of function "<<funcSymbol->getName()<<endl<<endl;
+		}else{
+			bool isMatched=true;
+			for(int i=0;i<params.size();i++)
+				if(params[i]->getVariant().compare(foundSymbol->getChildSymbols()[i]->getVariant())){
+					isMatched=false;
+					break;
+				}
+			if(isMatched) foundSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
+			else{
+				logFile<<"Error at line "<<lineCount<<": parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<":  parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl;
+			}
+		}
+	}
 	else{
 		logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
 	}
-	symbolTable->exitScope();
 }
 
 
@@ -140,13 +164,13 @@ unit : var_declaration
 	 }
      ;
 
-func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
+func_definition : type_specifier ID LPAREN parameter_list RPAREN func_body
 	{
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_definition");
 		insertFunctionDefinitionToTable($1,$2,$4->getChildSymbols(),$$->getName());
 		log("type_specifier ID LPAREN parameter_list RPAREN compound_statement",$$);
 	}
-	| type_specifier ID LPAREN RPAREN compound_statement
+	| type_specifier ID LPAREN RPAREN func_body_no_params
 	{
 		vector<SymbolInfo*> symbols;
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_definition");
@@ -155,10 +179,181 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 	}
 	;
 
-compound_statement : LCURL statements RCURL
-	{
+	
+
+func_body_no_params : temp_rule statements RCURL {
 		$$=new SymbolInfo($1->getName()+"\n"+$2->getName()+"\n"+$3->getName(),"compound_statement");
-		log("LCURL statements RCURL",$$);	
+		log("LCURL statements RCURL",$$);
+	}
+	| LCURL RCURL
+	{
+		$$=new SymbolInfo($1->getName()+$2->getName(),"compound_statement");
+		log("LCURL RCURL",$$);
+	}
+	;
+
+temp_rule : LCURL {
+		//symbolTable->enterScope();
+	}
+	;
+
+func_body : LCURL statements RCURL {
+		$$=new SymbolInfo($1->getName()+"\n"+$2->getName()+"\n"+$3->getName(),"compound_statement");
+		log("LCURL statements RCURL",$$);
+	}
+	| LCURL RCURL
+	{
+		$$=new SymbolInfo($1->getName()+$2->getName(),"compound_statement");
+		log("LCURL RCURL",$$);
+	}
+	;
+
+
+var_declaration : type_specifier declaration_list SEMICOLON
+     {
+		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName(),"var_declaration");
+		insertVariablesToTable($1,$2->getChildSymbols(),$$->getName());
+		log("type_specifier declaration_list SEMICOLON",$$);
+	 }
+ 	 ;
+
+declaration_list : declaration_list COMMA ID
+	{
+		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"declaration_list");
+		for(int i=0;i<$1->getChildSymbols().size();i++)
+			$$->addChildSymbol($1->getChildSymbols()[i]);
+		$3->setGroup(GROUP_VARIABLE);
+		$$->addChildSymbol($3);
+		log("declaration_list COMMA ID",$$);	
+	}
+	| declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
+	{
+		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"declaration_list");
+		$3->setGroup(GROUP_ARRAY);
+		$$->addChildSymbol($3);
+		log("declaration_list COMMA ID LTHIRD CONST_INT RTHIRD",$$);
+	}
+	| ID
+	{
+		$$=new SymbolInfo($1->getName(),"declaration_list");
+		$1->setGroup(GROUP_VARIABLE);
+		$$->addChildSymbol($1);
+		log("ID",$$);
+	}
+	| ID LTHIRD CONST_INT RTHIRD
+	{
+		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"declaration_list");
+		$1->setGroup(GROUP_ARRAY);
+		$$->addChildSymbol($1);
+		log("ID LTHIRD CONST_INT RTHIRD",$$);
+	}
+	;
+     
+func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
+		{
+			symbolTable->exitScope();
+			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_declaration");
+			insertFunctionDeclarationToTable($1,$2,$4->getChildSymbols(),$$->getName());
+			log("type_specifier ID LPAREN parameter_list RPAREN SEMICOLON",$$);
+		}
+		| type_specifier ID LPAREN RPAREN SEMICOLON
+		{
+			vector<SymbolInfo*> symbols;
+			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_declaration");
+			insertFunctionDeclarationToTable($1,$2,symbols,$$->getName());
+			log("type_specifier ID LPAREN RPAREN SEMICOLON",$$);
+		}
+		;
+
+parameter_list  : parameter_list COMMA type_specifier ID
+		{
+			$$=$1;
+			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+" "+$4->getName(),"parameter_list");
+			for(int i=0;i<$1->getChildSymbols().size();i++)
+				$$->addChildSymbol($1->getChildSymbols()[i]);
+			$4->setVariant($3->getName());
+			$4->setGroup(GROUP_VARIABLE);
+			bool isInserted=symbolTable->insertSymbol($4);
+			log("parameter_list COMMA type_specifier ID",$$);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<" in parameter"<<endl<<endl;
+			}
+			$$->addChildSymbol($4);
+		}
+		| parameter_list COMMA type_specifier
+		{
+			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"parameter_list");
+			for(int i=0;i<$1->getChildSymbols().size();i++)
+				$$->addChildSymbol($1->getChildSymbols()[i]);
+			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			newSymbol->setVariant($3->getName());
+			newSymbol->setGroup(GROUP_VARIABLE);
+			bool isInserted=symbolTable->insertSymbol(newSymbol);
+			log("parameter_list COMMA type_specifier",$$);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl;
+			}
+			$$->addChildSymbol(newSymbol);
+		}
+ 		| type_specifier ID
+		 {
+			symbolTable->enterScope();
+			$$=new SymbolInfo($1->getName()+" "+$2->getName(),"parameter_list");
+			$2->setVariant($1->getName());
+			$2->setGroup(GROUP_VARIABLE);
+			bool isInserted=symbolTable->insertSymbol($2);
+			log("type_specifier ID",$$);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<" in parameter"<<endl<<endl;
+			}
+			$$->addChildSymbol($2);
+		 }
+		| type_specifier
+		{
+			symbolTable->enterScope();
+			$$=new SymbolInfo($1->getName(),"parameter_list");
+			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			newSymbol->setVariant($1->getName());
+			newSymbol->setGroup(GROUP_VARIABLE);
+			bool isInserted=symbolTable->insertSymbol(newSymbol);
+			log("type_specifier",$$);
+			if(!isInserted){
+				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl;
+			}
+			$$->addChildSymbol(newSymbol);
+		}
+ 		;
+
+ 		 
+type_specifier	: INT
+		{
+			$$=new SymbolInfo($1->getName(),"type_specifier");
+			log("INT",$$);
+		}
+ 		| FLOAT
+		{
+			$$=new SymbolInfo($1->getName(),"type_specifier");
+			log("FLOAT",$$);
+		}
+ 		| VOID 
+		{
+			$$=new SymbolInfo($1->getName(),"type_specifier");
+			log("VOID",$$);
+		}
+ 		;
+
+
+compound_statement : LCURL {
+		symbolTable->enterScope();
+	} statements RCURL {
+		$$=new SymbolInfo($1->getName()+"\n"+$2->getName()+"\n"+$3->getName(),"compound_statement");
+		log("LCURL statements RCURL",$$);
+		logFile<<symbolTable->printAllScopes();
+		symbolTable->exitScope();
 	}
 	| LCURL RCURL
 	{
@@ -218,6 +413,11 @@ statement : var_declaration
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"statement");
 		log("PRINTLN LPAREN ID RPAREN SEMICOLON",$$);
+		SymbolInfo *foundSymbol=symbolTable->lookup($3->getName());
+		if(foundSymbol==NULL || foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0 || foundSymbol->getGroup().compare(GROUP_FUNCTION_DEFINITION)==0){
+			logFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$3->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$3->getName()<<endl<<endl;
+		}
 	}
 	| RETURN expression SEMICOLON
 	{
@@ -242,34 +442,66 @@ variable : ID
 	{
 		$$=new SymbolInfo($1->getName(),"variable");
 		log("ID",$$);
+		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
+		if(foundSymbol==NULL || foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0 || foundSymbol->getGroup().compare(GROUP_FUNCTION_DEFINITION)==0){
+			logFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$1->getName()<<endl<<endl;
+			$$->setGroup(GROUP_VARIABLE);
+			$$->setVariant(VARIANT_UNDEFINED);
+		}else{
+			$$->setGroup(foundSymbol->getGroup());
+			$$->setVariant(foundSymbol->getVariant());
+		}
 	}		
 	| ID LTHIRD expression RTHIRD
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"variable");
 		log("ID LTHIRD expression RTHIRD",$$);
+		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
+		if(foundSymbol==NULL || foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0 || foundSymbol->getGroup().compare(GROUP_FUNCTION_DEFINITION)==0 || foundSymbol->getGroup().compare(GROUP_VARIABLE)==0){
+			logFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Undeclared variable "<<$1->getName()<<endl<<endl;
+			$$->setGroup(GROUP_VARIABLE);
+			$$->setVariant(VARIANT_UNDEFINED);
+		}else{
+			$$->setGroup(GROUP_VARIABLE);
+			$$->setVariant(foundSymbol->getVariant());
+		}
 	} 
 	;
 
 expression : logic_expression
 	{
 		$$=new SymbolInfo($1->getName(),"expression");
+		$$->setVariant($1->getVariant());
 		log("logic_expression",$$);
 	}	
 	| variable ASSIGNOP logic_expression 
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"expression");
 		log("variable ASSIGNOP logic_expression",$$);
+		if($1->getGroup().compare(GROUP_ARRAY)==0){
+			logFile<<"Error at line "<<lineCount<<": Type Mismatch "<<$1->getName()<<" is an array"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Type Mismatch "<<$1->getName()<<" is an array"<<endl<<endl;
+		}
+		else if(!($1->getVariant().compare(VARIANT_FLOAT)==0 && $3->getVariant().compare(VARIANT_INT)==0) && $1->getVariant().compare($3->getVariant())!=0){
+			logFile<<"Error at line "<<lineCount<<": Type Mismatch : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Type Mismatch : "<<$1->getName()<<endl<<endl;
+		}
+		$$->setVariant(VARIANT_INT);
 	}	
 	;
 			
 logic_expression : rel_expression
 	{
 		$$=new SymbolInfo($1->getName(),"logic_expression");
+		$$->setVariant($1->getVariant());
 		log("rel_expression",$$);
 	}	
 	| rel_expression LOGICOP rel_expression 
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"logic_expression");
+		$$->setVariant(VARIANT_INT);
 		log("rel_expression LOGICOP rel_expression",$$);
 	}	
 	;
@@ -277,11 +509,13 @@ logic_expression : rel_expression
 rel_expression	: simple_expression
 	{
 		$$=new SymbolInfo($1->getName(),"rel_expression");
+		$$->setVariant($1->getVariant());
 		log("simple_expression",$$);
 	} 
 	| simple_expression RELOP simple_expression
 	{
 		$$=new SymbolInfo($1->getName(),"rel_expression");
+		$$->setVariant(VARIANT_INT);
 		log("simple_expression",$$);
 	}
 	;
@@ -289,11 +523,17 @@ rel_expression	: simple_expression
 simple_expression : term
 	{
 		$$=new SymbolInfo($1->getName(),"simple_expression");
+		$$->setVariant($1->getVariant());
 		log("simple_expression",$$);
 	}
 	| simple_expression ADDOP term
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"simple_expression");
+		if($1->getVariant().compare(VARIANT_FLOAT)==0 || $3->getVariant().compare(VARIANT_FLOAT)==0)
+			$$->setVariant(VARIANT_FLOAT);
+		else if($1->getVariant().compare(VARIANT_INT)==0 || $3->getVariant().compare(VARIANT_INT)==0)
+			$$->setVariant(VARIANT_INT);
+		else $$->setVariant(VARIANT_UNDEFINED);
 		log("simple_expression ADDOP term",$$);
 	}
 	;
@@ -301,28 +541,41 @@ simple_expression : term
 term :	unary_expression
 	{
 		$$=new SymbolInfo($1->getName(),"term");
+		$$->setVariant($1->getVariant());
 		log("unary_expression",$$);
 	}
      |  term MULOP unary_expression
 	 {
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"term");
+		if($1->getVariant().compare(VARIANT_FLOAT)==0 || $3->getVariant().compare(VARIANT_FLOAT)==0)
+			$$->setVariant(VARIANT_FLOAT);
+		else if($1->getVariant().compare(VARIANT_INT)==0 || $3->getVariant().compare(VARIANT_INT)==0)
+			$$->setVariant(VARIANT_INT);
+		else $$->setVariant(VARIANT_UNDEFINED);
 		log("term MULOP unary_expression",$$);
+		if($2->getName().compare("%")==0 && !($1->getVariant().compare(VARIANT_INT)==0 && $3->getVariant().compare(VARIANT_INT)==0)){
+			logFile<<"Error at line "<<lineCount<<": Both the operands of the modulus operator should be integers : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Both the operands of the modulus operator should be integers : "<<$1->getName()<<endl<<endl;
+		}
 	 }
      ;
 
 unary_expression : ADDOP unary_expression
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName(),"unary_expression");
+		$$->setVariant($2->getVariant());
 		log("ADDOP unary_expression",$$);
 	}
 	| NOT unary_expression 
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName(),"unary_expression");
+		$$->setVariant($2->getVariant());
 		log("NOT unary_expression",$$);
 	}
 	| factor
 	{
 		$$=new SymbolInfo($1->getName(),"unary_expression");
+		$$->setVariant($1->getVariant());
 		log("factor",$$);
 	} 
 	;
@@ -331,34 +584,59 @@ factor	: variable
 	{
 		$$=new SymbolInfo($1->getName(),"factor");
 		log("variable",$$);
+		$$->setVariant($1->getVariant());
 	}
 	| ID LPAREN argument_list RPAREN
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"factor");
+		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
 		log("ID LPAREN argument_list RPAREN",$$);
+		if(foundSymbol==NULL){
+			logFile<<"Error at line "<<lineCount<<": Undeclared function : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Undeclared function : "<<$1->getName()<<endl<<endl;
+			$$->setVariant(VARIANT_UNDEFINED);
+		}else if(foundSymbol->getGroup().compare(GROUP_ARRAY)==0 || foundSymbol->getGroup().compare(GROUP_VARIABLE)==0){
+			logFile<<"Error at line "<<lineCount<<": Function call made with non function type identifier : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Function call made with non function type identifier : "<<$1->getName()<<endl<<endl;
+		}else{
+			if(foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0){
+				logFile<<"Error at line "<<lineCount<<": Undefined function : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Undefined function : "<<$1->getName()<<endl<<endl;
+			}
+			if(foundSymbol->getVariant().compare(VARIANT_VOID)==0){
+				logFile<<"Error at line "<<lineCount<<": Void function can't be used as factor : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount<<": Void function can't be used as factor : "<<$1->getName()<<endl<<endl;
+			}
+			$$->setVariant(foundSymbol->getVariant());
+		}
 	}
 	| LPAREN expression RPAREN
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"factor");
+		$$->setVariant($2->getVariant());
 		log("LPAREN expression RPAREN",$$);
 	}
 	| CONST_INT
 	{
 		$$=new SymbolInfo($1->getName(),"factor");
+		$$->setVariant(VARIANT_INT);
 		log("CONST_INT",$$);
 	} 
 	| CONST_FLOAT
 	{
 		$$=new SymbolInfo($1->getName(),"factor");
+		$$->setVariant(VARIANT_FLOAT);
 		log("CONST_FLOAT",$$);
 	}
 	| variable INCOP{
 		$$=new SymbolInfo($1->getName(),"factor");
+		$$->setVariant($1->getVariant());
 		log("INCOP",$$);
 	} 
 	| variable DECOP
 	{
 		$$=new SymbolInfo($1->getName(),"factor");
+		$$->setVariant($1->getVariant());
 		log("DECOP",$$);
 	}
 	;
@@ -381,135 +659,6 @@ arguments : arguments COMMA logic_expression
 		log("logic_expression",$$);
 	}
 	;
-
-
-
-
-var_declaration : type_specifier declaration_list SEMICOLON
-     {
-		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName(),"var_declaration");
-		insertVariablesToTable($1,$2->getChildSymbols(),$$->getName());
-		log("type_specifier declaration_list SEMICOLON",$$);
-	 }
- 	 ;
-
-declaration_list : declaration_list COMMA ID
-	{
-		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
-		$$->addChildSymbol($3);
-		log("declaration_list COMMA ID",$$);	
-	}
-	| declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
-	{
-		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"declaration_list");
-		log("declaration_list COMMA ID LTHIRD CONST_INT RTHIRD",$$);
-	}
-	| ID
-	{
-		$$=new SymbolInfo($1->getName(),"declaration_list");
-		$$->addChildSymbol($1);
-		log("ID",$$);
-	}
-	| ID LTHIRD CONST_INT RTHIRD
-	{
-		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"declaration_list");
-		log("ID LTHIRD CONST_INT RTHIRD",$$);
-	}
-	;
-     
-func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
-		{
-			symbolTable->exitScope();
-			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"func_declaration");
-			insertFunctionDeclarationToTable($1,$2,$4->getChildSymbols(),$$->getName());
-			log("type_specifier ID LPAREN parameter_list RPAREN SEMICOLON",$$);
-		}
-		| type_specifier ID LPAREN RPAREN SEMICOLON
-		{
-			vector<SymbolInfo*> symbols;
-			$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName()+$4->getName()+$5->getName(),"func_declaration");
-			insertFunctionDeclarationToTable($1,$2,symbols,$$->getName());
-			log("type_specifier ID LPAREN RPAREN SEMICOLON",$$);
-		}
-		;
-
-parameter_list  : parameter_list COMMA type_specifier ID
-		{
-			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+" "+$4->getName(),"parameter_list");
-			for(int i=0;i<$1->getChildSymbols().size();i++)
-				$$->addChildSymbol($1->getChildSymbols()[i]);
-			$4->setVariant($3->getName());
-			bool isInserted=symbolTable->insertSymbol($4);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$4->getName()<<endl<<endl;
-			}
-			$$->addChildSymbol($4);
-			log("parameter_list COMMA type_specifier ID",$$);
-		}
-		| parameter_list COMMA type_specifier
-		{
-			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"parameter_list");
-			for(int i=0;i<$1->getChildSymbols().size();i++)
-				$$->addChildSymbol($1->getChildSymbols()[i]);
-			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
-			newSymbol->setVariant($3->getName());
-			bool isInserted=symbolTable->insertSymbol(newSymbol);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
-			}
-			$$->addChildSymbol(newSymbol);
-			log("parameter_list COMMA type_specifier",$$);
-		}
- 		| type_specifier ID
-		 {
-			symbolTable->enterScope();
-			$$=new SymbolInfo($1->getName()+" "+$2->getName(),"parameter_list");
-			$2->setVariant($1->getName());
-			bool isInserted=symbolTable->insertSymbol($2);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<$2->getName()<<endl<<endl;
-			}
-			$$->addChildSymbol($2);
-			log("type_specifier ID",$$);
-		 }
-		| type_specifier
-		{
-			symbolTable->enterScope();
-			$$=new SymbolInfo($1->getName(),"parameter_list");
-			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
-			newSymbol->setVariant($1->getName());
-			bool isInserted=symbolTable->insertSymbol(newSymbol);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
-			}
-			$$->addChildSymbol(newSymbol);
-			log("type_specifier",$$);
-		}
- 		;
-
- 		 
-type_specifier	: INT
-		{
-			$$=new SymbolInfo($1->getName(),"type_specifier");
-			log("INT",$$);
-		}
- 		| FLOAT
-		{
-			$$=new SymbolInfo($1->getName(),"type_specifier");
-			log("FLOAT",$$);
-		}
- 		| VOID 
-		{
-			$$=new SymbolInfo($1->getName(),"type_specifier");
-			log("VOID",$$);
-		}
- 		;
 
  
 

@@ -141,13 +141,15 @@ bool Hash::insertItem(SymbolInfo *item){
 string Hash::print(){
 	printStream.str("");
 	for(int i=0;i<this->size;i++){
-		printStream<<i<<" --> ";
-		SymbolInfo *currSymbol=this->items[i];
-		while(currSymbol!=NULL){
-			printStream<<"< "<<currSymbol->getName()<<" : "<<currSymbol->getType()<<" >";
-			currSymbol=currSymbol->getNextSymbol();
+		if(this->items[i]!=NULL){
+			printStream<<i<<" --> ";
+			SymbolInfo *currSymbol=this->items[i];
+			while(currSymbol!=NULL){
+				printStream<<"< "<<currSymbol->getName()<<" : "<<currSymbol->getType()<<" >";
+				currSymbol=currSymbol->getNextSymbol();
+			}
+			printStream<<endl;
 		}
-		printStream<<endl;
 	}
 	printStream<<endl;
 	return printStream.str();

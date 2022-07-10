@@ -2,125 +2,204 @@ Line 1 : type_specifier : INT
 
 int
 
-Line 1 : declaration_list : ID
-
-x
-
-Line 1 : declaration_list : declaration_list COMMA ID
-
-x,y
-
-Line 1 : declaration_list : declaration_list COMMA ID
-
-x,y,z
-
-Line 1 : var_declaration : type_specifier declaration_list SEMICOLON
-
-int x,y,z;
-
-Line 1 : unit : var_declaration
-
-int x,y,z;
-
-Line 1 : program : unit
-
-int x,y,z;
-
-Line 2 : type_specifier : INT
+Line 1 : type_specifier : INT
 
 int
 
-Line 2 : declaration_list : ID
-
-x
-
-Error at line 2: Multiple declaration of x
-
-int x;
-
-Line 2 : var_declaration : type_specifier declaration_list SEMICOLON
-
-int x;
-
-Line 2 : unit : var_declaration
-
-int x;
-
-Line 2 : program : program unit
-
-int x,y,z;
-int x;
-
-Line 4 : type_specifier : INT
-
-int
-
-Line 4 : type_specifier : INT
-
-int
-
-Line 4 : parameter_list : type_specifier ID
+Line 1 : parameter_list : type_specifier ID
 
 int a
 
-Line 4 : type_specifier : INT
-
-int
-
-Line 4 : parameter_list : parameter_list COMMA type_specifier ID
-
-int a,int b
-
-Line 4 : func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
-
-int func(int a,int b);
-
-Line 4 : unit : func_declaration
-
-int func(int a,int b);
-
-Line 4 : program : program unit
-
-int x,y,z;
-int x;
-int func(int a,int b);
-
-Line 6 : type_specifier : INT
-
-int
-
-Line 6 : type_specifier : INT
-
-int
-
-Line 6 : parameter_list : type_specifier ID
-
-int a
-
-Line 6 : type_specifier : INT
-
-int
-
-Line 6 : parameter_list : parameter_list COMMA type_specifier ID
-
-int a,int b
-
-Line 8 : compound_statement : LCURL RCURL
+Line 1 : compound_statement : LCURL RCURL
 
 {}
 
-Line 8 : func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
+ScopeTable# 1.1
+6 --> < a : ID >
 
-int func4(int a,int b){}
+ScopeTable# 1
 
-Line 8 : unit : func_definition
+Line 1 : func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
 
-int func4(int a,int b){}
+int d(int a){}
 
-Line 8 : program : program unit
+Line 1 : unit : func_definition
 
-int x,y,z;
-int x;
-int func(int a,int b);
-int func4(int a,int b){}
+int d(int a){}
+
+Line 1 : program : unit
+
+int d(int a){}
+
+Line 3 : type_specifier : INT
+
+int
+
+Line 4 : type_specifier : FLOAT
+
+float
+
+Line 4 : declaration_list : ID
+
+a
+
+Line 4 : declaration_list : declaration_list COMMA ID
+
+a,b
+
+Line 4 : declaration_list : declaration_list COMMA ID
+
+a,b,c
+
+Line 4 : var_declaration : type_specifier declaration_list SEMICOLON
+
+float a,b,c;
+
+Line 4 : statement : var_declaration
+
+float a,b,c;
+
+Line 4 : statements : statement
+
+float a,b,c;
+
+Line 5 : variable : ID
+
+a
+
+Line 5 : factor : CONST_INT
+
+2
+
+Line 5 : unary_expression : factor
+
+2
+
+Line 5 : term : unary_expression
+
+2
+
+Line 5 : simple_expression : simple_expression
+
+2
+
+Line 5 : rel_expression : simple_expression
+
+2
+
+Line 5 : logic_expression : rel_expression
+
+2
+
+Line 5 : arguments : logic_expression
+
+2
+
+Line 5 : argument_list : arguments
+
+2
+
+Line 5 : factor : ID LPAREN argument_list RPAREN
+
+d(2)
+
+Line 5 : unary_expression : factor
+
+d(2)
+
+Line 5 : term : unary_expression
+
+d(2)
+
+Line 5 : simple_expression : simple_expression
+
+d(2)
+
+Line 5 : factor : CONST_FLOAT
+
+2.5
+
+Line 5 : unary_expression : factor
+
+2.5
+
+Line 5 : term : unary_expression
+
+2.5
+
+Line 5 : factor : CONST_INT
+
+2
+
+Line 5 : unary_expression : factor
+
+2
+
+Line 5 : term : term MULOP unary_expression
+
+2.5/2
+
+Line 5 : simple_expression : simple_expression ADDOP term
+
+d(2)+2.5/2
+
+Line 5 : rel_expression : simple_expression
+
+d(2)+2.5/2
+
+Line 5 : logic_expression : rel_expression
+
+d(2)+2.5/2
+
+Line 5 : expression : variable ASSIGNOP logic_expression
+
+a=d(2)+2.5/2
+
+Line 5 : expression_statement : expression SEMICOLON 
+
+a=d(2)+2.5/2;
+
+Line 5 : statement : expression_statement
+
+a=d(2)+2.5/2;
+
+Line 5 : statements : statements statement
+
+float a,b,c;
+a=d(2)+2.5/2;
+
+Line 6 : compound_statement : LCURL statements RCURL
+
+{
+float a,b,c;
+a=d(2)+2.5/2;
+}
+
+ScopeTable# 1
+0 --> < b : ID >
+1 --> < c : ID >
+2 --> < d : ID >
+6 --> < a : ID >
+
+Line 6 : func_definition : type_specifier ID LPAREN RPAREN compound_statement
+
+int main(){
+float a,b,c;
+a=d(2)+2.5/2;
+}
+
+Line 6 : unit : func_definition
+
+int main(){
+float a,b,c;
+a=d(2)+2.5/2;
+}
+
+Line 6 : program : program unit
+
+int d(int a){}
+int main(){
+float a,b,c;
+a=d(2)+2.5/2;
+}
 

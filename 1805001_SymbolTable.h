@@ -109,13 +109,13 @@ bool SymbolTable::insertSymbol(SymbolInfo *newSymbol){
 void SymbolTable::exitScope(){
 	ScopeTable *parentScope=this->currentScope->getParentScope();
 	if(parentScope==NULL){
-		delete currentScope;
+		//delete currentScope;
 		currentScope=new ScopeTable(this->bucketSize);
 		return;
 	}
 	ScopeTable *tmpScope=this->currentScope;
 	this->currentScope=this->currentScope->getParentScope();
-	delete tmpScope;
+	//delete tmpScope;
 }
 
 void SymbolTable::enterScope(){

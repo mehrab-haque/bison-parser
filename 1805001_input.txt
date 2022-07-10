@@ -1,9 +1,6 @@
-int x,y,z;
-int x;
+int d(int a){}
 
-int func(int a,int b);
-
-int func4(int a,int b){
-    
+int main(){
+    float a,b,c;
+    a=d(2)+2.5/2;
 }
-
