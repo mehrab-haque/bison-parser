@@ -135,7 +135,9 @@ SingleQuot \'
 
 
 ([`#~@$^&](" "|\t)*)+ {
-    unrecognizedCharError(string(yytext,strlen(yytext)));
+    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"UNRECOGNIZED_CHARACTER");
+    yylval=(YYSTYPE)symbolInfo;
+    return UNRECOGNIZED_CHARACTER;
 }
 
 ("!") {

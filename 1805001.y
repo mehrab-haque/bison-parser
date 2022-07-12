@@ -142,7 +142,7 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 
 %}
 
-%token ID ELSE LPAREN NEWLINE UNRECOGNIZED_OPERATOR RPAREN SEMICOLON COMMA LCURL RCURL INT FLOAT VOID LTHIRD CONST_INT RTHIRD FOR IF WHILE PRINTLN RETURN ASSIGNOP RELOP ADDOP MULOP NOT CONST_FLOAT INCOP DECOP  
+%token ID ELSE LPAREN NEWLINE UNRECOGNIZED_OPERATOR UNRECOGNIZED_CHARACTER RPAREN SEMICOLON COMMA LCURL RCURL INT FLOAT VOID LTHIRD CONST_INT RTHIRD FOR IF WHILE PRINTLN RETURN ASSIGNOP RELOP ADDOP MULOP NOT CONST_FLOAT INCOP DECOP  
 
 %left RELOP LOGICOP
 %left ADDOP
@@ -554,6 +554,12 @@ expression_statement : SEMICOLON
 	| expression error {
 		$$=new SymbolInfo("","expression_statement");
 	}
+	| UNRECOGNIZED_CHARACTER {
+		$$=new SymbolInfo("","expression_statement");
+		logFile<<"Error at line "<<lineCount<<": Unrecognized character "<<$1->getName()<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": Unrecognized character "<<$1->getName()<<endl<<endl;
+		errorCount++;
+	}
 	;
 
 
@@ -608,7 +614,7 @@ expression : logic_expression
 	{
 		$$=new SymbolInfo($1->getName(),"expression");
 		$$->setVariant($1->getVariant());
-		log("logic_expression",$$);
+		if(!isError)log("logic_expression",$$);
 		$$->setGroup($1->getGroup());
 	}	
 	| variable ASSIGNOP logic_expression 
