@@ -19,6 +19,7 @@
 using namespace std;
 
 extern int lineCount,errorCount;
+extern void unrecognizedCharError(string character);
 int tmpLineCount;
 string stringBody;
 string logStringBody;
@@ -126,6 +127,15 @@ SingleQuot \'
     SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"LOGICOP");
     yylval=(YYSTYPE)symbolInfo;
     return LOGICOP;
+}
+
+([+/-](" "|\t)*[=])+ {
+    return UNRECOGNIZED_OPERATOR;
+}
+
+
+([`#~@$^&](" "|\t)*)+ {
+    unrecognizedCharError(string(yytext,strlen(yytext)));
 }
 
 ("!") {

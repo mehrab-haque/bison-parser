@@ -33,7 +33,9 @@ const string VARIANT_FLOAT="float";
 const string VARIANT_VOID="void";
 const string VARIANT_UNDEFINED="undefined";
 
-string funcion_retyrn_type;
+const string VARIABLE_NAME_NULL="<null>";
+
+bool isError=false;
 
 void yyerror(char *s)
 {
@@ -77,6 +79,12 @@ void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector
 	}
 }
 
+void unrecognizedCharError(string character){
+	logFile<<"Error at line "<<lineCount<<": Unrecognized character "<<character<<endl<<endl;
+	errorFile<<"Error at line "<<lineCount<<": Unrecognized character "<<character<<endl<<endl;
+	errorCount++;
+}
+
 
 void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
 	logFile<<symbolTable->printAllScopes();
@@ -89,6 +97,11 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 		newParam->setVariant(params[i]->getVariant());
 		newParam->setGroup(params[i]->getGroup());
 		funcSymbol->addChildSymbol(newParam);
+		if(newParam->getName().compare(VARIABLE_NAME_NULL)==0){
+			logFile<<"Error at line "<<lineCount<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
+			errorCount++;
+		}
 	}
 	SymbolInfo *foundSymbol=symbolTable->lookup(funcId->getName());
 	if(foundSymbol==NULL)
@@ -128,7 +141,7 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 
 %}
 
-%token ID ELSE LPAREN RPAREN SEMICOLON COMMA LCURL RCURL INT FLOAT VOID LTHIRD CONST_INT RTHIRD FOR IF WHILE PRINTLN RETURN ASSIGNOP RELOP ADDOP MULOP NOT CONST_FLOAT INCOP DECOP  
+%token ID ELSE LPAREN NEWLINE UNRECOGNIZED_OPERATOR RPAREN SEMICOLON COMMA LCURL RCURL INT FLOAT VOID LTHIRD CONST_INT RTHIRD FOR IF WHILE PRINTLN RETURN ASSIGNOP RELOP ADDOP MULOP NOT CONST_FLOAT INCOP DECOP  
 
 %left RELOP LOGICOP
 %left ADDOP
@@ -136,6 +149,8 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
+%nonassoc LOWER_THAN_SEMICOLON
+%nonassoc SEMICOLON
 
 
 %%
@@ -235,7 +250,6 @@ var_declaration : type_specifier declaration_list SEMICOLON
 			errorFile<<"Error at line "<<lineCount<<": Variable type cannot be void"<<endl<<endl;
 			errorCount++;
 		}
-		//cout<<$2->getChildSymbols().size()<<endl;
 	 }	
  	 ;
 
@@ -278,19 +292,42 @@ declaration_list : declaration_list COMMA ID
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"declaration_list");
 		$1->setGroup(GROUP_ARRAY);
-		$$->addChildSymbol($1);
-		log("ID LTHIRD CONST_INT RTHIRD",$$);
-	}
-	|
-	ID LTHIRD CONST_FLOAT RTHIRD
-	{
-		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"declaration_list");
-		log("ID LTHIRD CONST_INT RTHIRD",$$);
 		logFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl<<$$->getName()<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl;
 		errorCount++;
 	}
+	| declaration_list var_declaration_invalid_delimiters ID {
+		$$=new SymbolInfo($1->getName(),"declaration_list");
+		for(int i=0;i<$1->getChildSymbols().size();i++)
+			$$->addChildSymbol($1->getChildSymbols()[i]);
+		log("declaration_list var_declaration_invalid_delimiters ID",$$);
+		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+		errorCount++;
+	}
+	| declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_INT RTHIRD {
+		$$=new SymbolInfo($1->getName(),"declaration_list");
+		for(int i=0;i<$1->getChildSymbols().size();i++)
+			$$->addChildSymbol($1->getChildSymbols()[i]);
+		log("declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_INT RTHIRD",$$);
+		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+		errorCount++;
+	}
+	|
+	declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_FLOAT RTHIRD {
+		$$=new SymbolInfo($1->getName(),"declaration_list");
+		for(int i=0;i<$1->getChildSymbols().size();i++)
+			$$->addChildSymbol($1->getChildSymbols()[i]);
+		log("declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_FLOAT RTHIRD",$$);
+		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+		errorCount++;
+	}
 	;
+
+var_declaration_invalid_delimiters : ADDOP | MULOP | LOGICOP | INCOP | DECOP | RELOP | ASSIGNOP | NOT
+		;
      
 func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
 		{
@@ -332,17 +369,11 @@ parameter_list  : parameter_list COMMA type_specifier ID
 			$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"parameter_list");
 			for(int i=0;i<$1->getChildSymbols().size();i++)
 				$$->addChildSymbol($1->getChildSymbols()[i]);
-			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			SymbolInfo *newSymbol=new SymbolInfo(VARIABLE_NAME_NULL,"ID");
 			newSymbol->setVariant($3->getName());
 			newSymbol->setGroup(GROUP_VARIABLE);
-			bool isInserted=symbolTable->insertSymbol(newSymbol);
-			log("parameter_list COMMA type_specifier",$$);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl;
-				errorCount++;
-			}
 			$$->addChildSymbol(newSymbol);
+			log("parameter_list COMMA type_specifier",$$);
 		}
  		| type_specifier ID
 		 {
@@ -363,17 +394,34 @@ parameter_list  : parameter_list COMMA type_specifier ID
 		{
 			symbolTable->enterScope();
 			$$=new SymbolInfo($1->getName(),"parameter_list");
-			SymbolInfo *newSymbol=new SymbolInfo(NULL,"ID");
+			SymbolInfo *newSymbol=new SymbolInfo(VARIABLE_NAME_NULL,"ID");
+			newSymbol->setVariant($1->getName());
+			log("type_specifier",$$);
+		}
+		| type_specifier error {
+			symbolTable->enterScope();
+			$$=new SymbolInfo($1->getName(),"parameter_list");
+			SymbolInfo *newSymbol=new SymbolInfo(VARIABLE_NAME_NULL,"ID");
 			newSymbol->setVariant($1->getName());
 			newSymbol->setGroup(GROUP_VARIABLE);
-			bool isInserted=symbolTable->insertSymbol(newSymbol);
-			log("type_specifier",$$);
-			if(!isInserted){
-				logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<" in parameter"<<endl<<endl;
-				errorCount++;
-			}
 			$$->addChildSymbol(newSymbol);
+			log("type_specifier",$$);
+			logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$1->getName()<<endl<<endl<<$1->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+			errorCount++;
+			yyclearin;
+		}
+		| parameter_list COMMA type_specifier error {
+			$$=new SymbolInfo($1->getName(),"parameter_list");
+			SymbolInfo *newSymbol=new SymbolInfo(VARIABLE_NAME_NULL,"ID");
+			newSymbol->setVariant($3->getName());
+			newSymbol->setGroup(GROUP_VARIABLE);
+			$$->addChildSymbol(newSymbol);
+			log("parameter_list COMMA type_specifier",$$);
+			logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$3->getName()<<endl<<endl<<$3->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+			errorCount++;			
+			yyclearin;
 		}
  		;
 
@@ -476,6 +524,9 @@ statement : var_declaration
 	}
 	;
 
+
+		
+
 expression_statement : SEMICOLON
 	{
 		$$=new SymbolInfo($1->getName(),"expression_statement");
@@ -486,7 +537,12 @@ expression_statement : SEMICOLON
 		$$=new SymbolInfo($1->getName()+$2->getName(),"expression_statement");
 		log("expression SEMICOLON",$$);
 	}
+	| expression error {
+		$$=new SymbolInfo("","expression_statement");
+	}
 	;
+
+
 
 variable : ID 
 	{
@@ -544,7 +600,7 @@ expression : logic_expression
 	| variable ASSIGNOP logic_expression 
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"expression");
-		log("variable ASSIGNOP logic_expression",$$);
+		if(!isError)log("variable ASSIGNOP logic_expression",$$);
 		if($1->getVariant().compare(VARIANT_UNDEFINED)==0 || $3->getVariant().compare(VARIANT_UNDEFINED)==0);
 		else if($1->getGroup().compare(GROUP_ARRAY)==0){
 			logFile<<"Error at line "<<lineCount<<": Type mismatch, "<<$1->getName()<<" is an array"<<endl<<endl<<$$->getName()<<endl<<endl;
@@ -558,11 +614,12 @@ expression : logic_expression
 		}
 		$$->setVariant(VARIANT_INT);
 		$$->setGroup($1->getGroup());
-	}	
+	}
 	;
 			
 logic_expression : rel_expression
 	{
+		isError=false;
 		$$=new SymbolInfo($1->getName(),"logic_expression");
 		$$->setVariant($1->getVariant());
 		log("rel_expression",$$);
@@ -570,12 +627,24 @@ logic_expression : rel_expression
 	}	
 	| rel_expression LOGICOP rel_expression 
 	{
+		isError=false;
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"logic_expression");
 		$$->setVariant(VARIANT_INT);
 		log("rel_expression LOGICOP rel_expression",$$);
 		$$->setGroup($1->getGroup());
 	}	
+	| rel_expression UNRECOGNIZED_OPERATOR rel_expression {
+		//cout<<$3->getName()<<endl;
+		isError=true;
+		$$=new SymbolInfo($1->getName(),"logic_expression");
+		$$->setVariant($1->getVariant());
+		$$->setGroup($1->getGroup());
+		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+		errorCount++;
+	}
 	;
+
 			
 rel_expression	: simple_expression
 	{
