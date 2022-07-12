@@ -2,338 +2,85 @@ Line 1: type_specifier : INT
 
 int
 
-Line 1: declaration_list : ID
+Line 2: type_specifier : VOID
 
-x
+void
 
-Line 1: declaration_list : declaration_list COMMA ID
-
-x,y
-
-Line 1: declaration_list : declaration_list COMMA ID
-
-x,y,z
-
-Line 1: var_declaration : type_specifier declaration_list SEMICOLON
-
-int x,y,z;
-
-Line 1: unit : var_declaration
-
-int x,y,z;
-
-Line 1: program : unit
-
-int x,y,z;
-
-Line 1: type_specifier : FLOAT
-
-float
-
-Line 1: declaration_list : ID
-
-a
-
-Line 1: var_declaration : type_specifier declaration_list SEMICOLON
-
-float a;
-
-Line 1: unit : var_declaration
-
-float a;
-
-Line 1: program : program unit
-
-int x,y,z;
-float a;
-
-Line 3: type_specifier : INT
-
-int
-
-Line 3: type_specifier : INT
-
-int
-
-Line 3: parameter_list : type_specifier
-
-int
-
-Error at line 3: syntax error
-
-int
-
-int
-
-Line 4: compound_statement : LCURL RCURL
+Line 2: compound_statement : LCURL RCURL
 
 {}
 
 ScopeTable# 1.1
 
 ScopeTable# 1
-1 --> < x : ID >
-2 --> < y : ID >
-3 --> < z : ID >
-6 --> < a : ID >
 
-Error at line 4: 1th parameter's name not given in function definition of var
+Line 2: func_definition : type_specifier ID LPAREN RPAREN compound_statement
 
-Line 4: func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
+void func(){}
 
-int var(int){}
+Line 2: statement : func_declaration
+
+void func(){}
+
+Error at line 2: Invalid scoping of function definition
+
+Line 2: statements : statement
+
+void func(){}
+
+Line 3: type_specifier : VOID
+
+void
+
+Line 3: func_declaration : type_specifier ID LPAREN RPAREN SEMICOLON
+
+void func1();
+
+Error at line 3: Invalid scoping of function declaration
+
+Line 3: statements : statements statement
+
+void func(){}
+void func1();
+
+Line 4: compound_statement : LCURL statements RCURL
+
+{
+void func(){}
+void func1();
+}
+
+ScopeTable# 1
+0 --> < func : ID >
+6 --> < func1 : ID >
+
+Line 4: func_definition : type_specifier ID LPAREN RPAREN compound_statement
+
+int main(){
+void func(){}
+void func1();
+}
 
 Line 4: unit : func_definition
 
-int var(int){}
-
-Line 4: program : program unit
-
-int x,y,z;
-float a;
-int var(int){}
-
-Line 7: type_specifier : INT
-
-int
-
-Line 8: type_specifier : INT
-
-int
-
-Line 8: declaration_list : ID
-
-x
-
-Line 8: declaration_list : declaration_list var_declaration_invalid_delimiters ID
-
-x
-
-Error at line 8: syntax error
-
-x
-
-x
-
-x
-
-Line 8: declaration_list : declaration_list COMMA ID
-
-x,z
-
-Line 8: var_declaration : type_specifier declaration_list SEMICOLON
-
-int x,z;
-
-Line 8: statement : var_declaration
-
-int x,z;
-
-Line 8: statements : statement
-
-int x,z;
-
-Line 9: variable : ID
-
-a
-
-Line 9: factor : CONST_INT
-
-2
-
-Line 9: unary_expression : factor
-
-2
-
-Line 9: term : unary_expression
-
-2
-
-Line 9: simple_expression : term
-
-2
-
-Line 9: rel_expression : simple_expression
-
-2
-
-Line 9: factor : CONST_INT
-
-6
-
-Line 9: unary_expression : factor
-
-6
-
-Line 9: term : unary_expression
-
-6
-
-Error at line 10: Unrecognized character #
-
-Line 11: simple_expression : term
-
-6
-
-Line 11: rel_expression : simple_expression
-
-6
-
-Error at line 11: syntax error
-
-Line 11: statement : expression_statement
-
-
-
-Line 11: statements : statements statement
-
-int x,z;
-
-
-Line 11: variable : ID
-
-x
-
-Line 11: factor : CONST_INT
-
-2
-
-Line 11: unary_expression : factor
-
-2
-
-Line 11: term : unary_expression
-
-2
-
-Line 11: simple_expression : term
-
-2
-
-Line 11: rel_expression : simple_expression
-
-2
-
-Line 11: logic_expression : rel_expression
-
-2
-
-Line 11: expression : variable ASSIGNOP logic_expression
-
-x=2
-
-Line 11: expression_statement : expression SEMICOLON
-
-x=2;
-
-Line 11: statement : expression_statement
-
-x=2;
-
-Line 11: statements : statements statement
-
-int x,z;
-
-x=2;
-
-Line 14: factor : CONST_INT
-
-0
-
-Line 14: unary_expression : factor
-
-0
-
-Line 14: term : unary_expression
-
-0
-
-Line 14: simple_expression : term
-
-0
-
-Line 14: rel_expression : simple_expression
-
-0
-
-Line 14: logic_expression : rel_expression
-
-0
-
-Line 14: expression : logic_expression
-
-0
-
-Line 14: statement : RETURN expression SEMICOLON
-
-return 0;
-
-Line 14: statements : statements statement
-
-int x,z;
-
-x=2;
-return 0;
-
-Line 15: compound_statement : LCURL statements RCURL
-
-{
-int x,z;
-
-x=2;
-return 0;
+int main(){
+void func(){}
+void func1();
 }
 
-ScopeTable# 1.2
-1 --> < x : ID >
-3 --> < z : ID >
-
-ScopeTable# 1
-1 --> < x : ID >
-2 --> < y : ID >
-3 --> < z : ID >< var : ID >
-6 --> < a : ID >
-
-Line 15: func_definition : type_specifier ID LPAREN RPAREN compound_statement
+Line 4: program : unit
 
 int main(){
-int x,z;
-
-x=2;
-return 0;
+void func(){}
+void func1();
 }
 
-Line 15: unit : func_definition
-
-int main(){
-int x,z;
-
-x=2;
-return 0;
-}
-
-Line 15: program : program unit
-
-int x,y,z;
-float a;
-int var(int){}
-int main(){
-int x,z;
-
-x=2;
-return 0;
-}
-
-Line 15: start : program
+Line 4: start : program
 
 
 
 ScopeTable# 1
-1 --> < x : ID >
-2 --> < y : ID >
-3 --> < z : ID >< var : ID >
 5 --> < main : ID >
-6 --> < a : ID >
 
-Total lines: 15
-Total errors: 5
+Total lines: 4
+Total errors: 2

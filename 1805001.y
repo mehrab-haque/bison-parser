@@ -36,6 +36,7 @@ const string VARIANT_UNDEFINED="undefined";
 const string VARIABLE_NAME_NULL="<null>";
 
 bool isError=false;
+bool isVoidFunction=false;
 
 void yyerror(char *s)
 {
@@ -476,6 +477,19 @@ statement : var_declaration
 		$$=new SymbolInfo($1->getName(),"statement");
 		log("var_declaration",$$);
 	}
+	| func_declaration {
+		$$=new SymbolInfo($1->getName(),"statement");
+		logFile<<"Error at line "<<lineCount<<": Invalid scoping of function declaration"<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": Invalid scoping of function declaration"<<endl<<endl;
+		errorCount++;
+	}
+	| func_definition {
+		$$=new SymbolInfo($1->getName(),"statement");
+		log("func_declaration",$$);
+		logFile<<"Error at line "<<lineCount<<": Invalid scoping of function definition"<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount<<": Invalid scoping of function definition"<<endl<<endl;
+		errorCount++;
+	}
 	| expression_statement
 	{
 		$$=new SymbolInfo($1->getName(),"statement");
@@ -614,6 +628,12 @@ expression : logic_expression
 		}
 		$$->setVariant(VARIANT_INT);
 		$$->setGroup($1->getGroup());
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	;
 			
@@ -627,11 +647,22 @@ logic_expression : rel_expression
 	}	
 	| rel_expression LOGICOP rel_expression 
 	{
+		if(isVoidFunction){
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 		isError=false;
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"logic_expression");
 		$$->setVariant(VARIANT_INT);
 		log("rel_expression LOGICOP rel_expression",$$);
 		$$->setGroup($1->getGroup());
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}	
 	| rel_expression UNRECOGNIZED_OPERATOR rel_expression {
 		//cout<<$3->getName()<<endl;
@@ -642,6 +673,12 @@ logic_expression : rel_expression
 		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
 		errorCount++;
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	;
 
@@ -659,6 +696,12 @@ rel_expression	: simple_expression
 		$$->setVariant(VARIANT_INT);
 		log("simple_expression RELOP simple_expression",$$);
 		$$->setGroup($1->getGroup());
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	;
 				
@@ -679,6 +722,12 @@ simple_expression : term
 		else $$->setVariant(VARIANT_UNDEFINED);
 		log("simple_expression ADDOP term",$$);
 		$$->setGroup($1->getGroup());
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	;
 					
@@ -710,6 +759,12 @@ term :	unary_expression
 		}
 		if($2->getName().compare("%")==0)$$->setVariant(VARIANT_INT);
 		$$->setGroup($1->getGroup());
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	 }
      ;
 
@@ -719,6 +774,12 @@ unary_expression : ADDOP unary_expression
 		$$->setVariant($2->getVariant());
 		$$->setGroup($2->getGroup());
 		log("ADDOP unary_expression",$$);
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	| NOT unary_expression 
 	{
@@ -726,6 +787,12 @@ unary_expression : ADDOP unary_expression
 		$$->setVariant($2->getVariant());
 		$$->setGroup($2->getGroup());
 		log("NOT unary_expression",$$);
+		if(isVoidFunction){
+			isVoidFunction=false;
+			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+			errorCount++;
+		}
 	}
 	| factor
 	{
@@ -745,6 +812,7 @@ factor	: variable
 	}
 	| ID LPAREN argument_list RPAREN
 	{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"factor");
 		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
 		log("ID LPAREN argument_list RPAREN",$$);
@@ -765,10 +833,11 @@ factor	: variable
 				errorCount++;
 			}
 			if(foundSymbol->getVariant().compare(VARIANT_VOID)==0){
+				isVoidFunction=true;
 				$$->setVariant(VARIANT_UNDEFINED);
-				logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
-				errorCount++;
+				// logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
+				// errorFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl;
+				// errorCount++;
 			}
 
 			if($3->getChildSymbols().size()!=foundSymbol->getChildSymbols().size()){
@@ -796,6 +865,7 @@ factor	: variable
 	}
 	| LPAREN expression RPAREN
 	{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"factor");
 		$$->setVariant($2->getVariant());
 		$$->setGroup($2->getGroup());
@@ -803,6 +873,7 @@ factor	: variable
 	}
 	| CONST_INT
 	{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName(),"factor");
 		$$->setVariant(VARIANT_INT);
 		$$->setGroup(GROUP_VARIABLE);
@@ -810,12 +881,14 @@ factor	: variable
 	} 
 	| CONST_FLOAT
 	{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName(),"factor");
 		$$->setVariant(VARIANT_FLOAT);
 		$$->setGroup(GROUP_VARIABLE);
 		log("CONST_FLOAT",$$);
 	}
 	| variable INCOP{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName()+$2->getName(),"factor");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
@@ -823,6 +896,7 @@ factor	: variable
 	} 
 	| variable DECOP
 	{
+		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName()+$2->getName(),"factor");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
@@ -836,6 +910,10 @@ argument_list : arguments
 		log("arguments",$$);
 		for(int i=0;i<$1->getChildSymbols().size();i++)
 			$$->addChildSymbol($1->getChildSymbols()[i]);
+	}
+	| {
+		$$=new SymbolInfo("","argument_list");
+		log("arguments",$$);
 	}
 	;
 	
