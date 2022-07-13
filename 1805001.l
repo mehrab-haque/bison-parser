@@ -20,6 +20,7 @@ using namespace std;
 
 extern int lineCount,errorCount;
 extern void unrecognizedCharError(string character);
+extern void syntaxError();
 int tmpLineCount;
 string stringBody;
 string logStringBody;
@@ -130,14 +131,13 @@ SingleQuot \'
 }
 
 ([+/-](" "|\t)*[=])+ {
+    unrecognizedCharError(string(yytext,strlen(yytext)));
     return UNRECOGNIZED_OPERATOR;
 }
 
 
 ([`#~@$^&](" "|\t)*)+ {
-    SymbolInfo * symbolInfo=new SymbolInfo(string(yytext,strlen(yytext)),"UNRECOGNIZED_CHARACTER");
-    yylval=(YYSTYPE)symbolInfo;
-    return UNRECOGNIZED_CHARACTER;
+    syntaxError();
 }
 
 ("!") {

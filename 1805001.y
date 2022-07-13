@@ -40,7 +40,7 @@ bool isVoidFunction=false;
 
 void yyerror(char *s)
 {
-	//write your code
+	syntaxError();
 }
 
 void log(string rule,SymbolInfo *symbolInfo){
@@ -83,6 +83,12 @@ void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector
 void unrecognizedCharError(string character){
 	logFile<<"Error at line "<<lineCount<<": Unrecognized character "<<character<<endl<<endl;
 	errorFile<<"Error at line "<<lineCount<<": Unrecognized character "<<character<<endl<<endl;
+	errorCount++;
+}
+
+void syntaxError(){
+	logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
+	errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
 	errorCount++;
 }
 
@@ -676,9 +682,6 @@ logic_expression : rel_expression
 		$$=new SymbolInfo($1->getName(),"logic_expression");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
-		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
-		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
-		errorCount++;
 		if(isVoidFunction){
 			isVoidFunction=false;
 			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
