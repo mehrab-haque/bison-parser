@@ -40,7 +40,7 @@ bool isVoidFunction=false;
 
 void yyerror(char *s)
 {
-	syntaxError();
+	//write your code
 }
 
 void log(string rule,SymbolInfo *symbolInfo){
@@ -59,7 +59,6 @@ void insertVariablesToTable(SymbolInfo *type,vector<SymbolInfo*> symbols,string 
 			errorCount++;
 		}
 	}
-
 }
 
 void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
@@ -93,20 +92,31 @@ void syntaxError(){
 }
 
 
+int nLines(string s){
+	cout<<s[s.size()-2]<<s[s.size()-1]<<endl;
+	int n=0;
+	for(int i=0;i<s.size();i++)
+		if(s[i]=='\n')
+			n++;
+	return n;
+}
+
+
 void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
 	logFile<<symbolTable->printAllScopes();
 	symbolTable->exitScope();
 	SymbolInfo *funcSymbol=new SymbolInfo(funcId->getName(),"ID");
 	funcSymbol->setVariant(type->getName());
 	funcSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
+
 	for(int i=0;i<params.size();i++){
 		SymbolInfo *newParam=new SymbolInfo(params[i]->getName(),"ID");
 		newParam->setVariant(params[i]->getVariant());
 		newParam->setGroup(params[i]->getGroup());
 		funcSymbol->addChildSymbol(newParam);
 		if(newParam->getName().compare(VARIABLE_NAME_NULL)==0){
-			logFile<<"Error at line "<<lineCount<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
-			errorFile<<"Error at line "<<lineCount<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
+			logFile<<"Error at line "<<lineCount-nLines(code)<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount-nLines(code)<<": "<<i+1<<"th parameter's name not given in function definition of "<<funcSymbol->getName()<<endl<<endl;
 			errorCount++;
 		}
 	}
@@ -115,13 +125,13 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 		symbolTable->insertSymbol(funcSymbol);
 	else if(foundSymbol->getGroup().compare(GROUP_FUNCTION_DECLARATION)==0){
 		if(foundSymbol->getVariant().compare(type->getName())!=0){
-			logFile<<"Error at line "<<lineCount<<": Return type mismatch with function declaration in function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
-			errorFile<<"Error at line "<<lineCount<<": Return type mismatch with function declaration in function "<<funcSymbol->getName()<<endl<<endl;
+			logFile<<"Error at line "<<lineCount-nLines(code)<<": Return type mismatch with function declaration in function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount-nLines(code)<<": Return type mismatch with function declaration in function "<<funcSymbol->getName()<<endl<<endl;
 			errorCount++;
 		}
 		if(params.size()!=foundSymbol->getChildSymbols().size()){
-			logFile<<"Error at line "<<lineCount<<": Number of arguments doesn't match declaration of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
-			errorFile<<"Error at line "<<lineCount<<": Total number of arguments mismatch with declaration in function "<<funcSymbol->getName()<<endl<<endl;
+			logFile<<"Error at line "<<lineCount-nLines(code)<<": Number of arguments doesn't match declaration of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount-nLines(code)<<": Total number of arguments mismatch with declaration in function "<<funcSymbol->getName()<<endl<<endl;
 			errorCount++;
 		}else{
 			bool isMatched=true;
@@ -132,15 +142,15 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 				}
 			if(isMatched) foundSymbol->setGroup(GROUP_FUNCTION_DEFINITION);
 			else{
-				logFile<<"Error at line "<<lineCount<<": parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
-				errorFile<<"Error at line "<<lineCount<<":  parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl;
+				logFile<<"Error at line "<<lineCount-nLines(code)<<": parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+				errorFile<<"Error at line "<<lineCount-nLines(code)<<":  parameter type mismatch of function "<<funcSymbol->getName()<<endl<<endl;
 				errorCount++;
 			}
 		}
 	}
 	else{
-		logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
-		errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
+		logFile<<"Error at line "<<lineCount-nLines(code)<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl<<code<<endl<<endl;
+		errorFile<<"Error at line "<<lineCount-nLines(code)<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
 		errorCount++;
 	}
 }
@@ -223,7 +233,7 @@ func_body : LCURL statements RCURL {
 	}
 	| LCURL RCURL
 	{
-		$$=new SymbolInfo($1->getName()+$2->getName(),"compound_statement");
+		$$=new SymbolInfo($1->getName()+"\n"+$2->getName(),"compound_statement");
 		log("LCURL RCURL",$$);
 	}
 	;
@@ -237,7 +247,7 @@ func_body_no_params : temp_rule statements RCURL {
 	}
 	| LCURL RCURL
 	{
-		$$=new SymbolInfo($1->getName()+$2->getName(),"compound_statement");
+		$$=new SymbolInfo($1->getName()+"\n"+$2->getName(),"compound_statement");
 		log("LCURL RCURL",$$);
 	}
 	;
@@ -297,11 +307,10 @@ declaration_list : declaration_list COMMA ID
 	}
 	| ID LTHIRD CONST_INT RTHIRD
 	{
-		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"declaration_list");
+		$$=new SymbolInfo($1->getName(),"declaration_list");
 		$1->setGroup(GROUP_ARRAY);
-		logFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl<<$$->getName()<<endl<<endl;
-		errorFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl;
-		errorCount++;
+		$$->addChildSymbol($1);
+		log("ID",$$);
 	}
 	| declaration_list var_declaration_invalid_delimiters ID {
 		$$=new SymbolInfo($1->getName(),"declaration_list");
@@ -560,12 +569,6 @@ expression_statement : SEMICOLON
 	| expression error {
 		$$=new SymbolInfo("","expression_statement");
 	}
-	| UNRECOGNIZED_CHARACTER {
-		$$=new SymbolInfo("","expression_statement");
-		logFile<<"Error at line "<<lineCount<<": Unrecognized character "<<$1->getName()<<endl<<endl;
-		errorFile<<"Error at line "<<lineCount<<": Unrecognized character "<<$1->getName()<<endl<<endl;
-		errorCount++;
-	}
 	;
 
 
@@ -591,7 +594,7 @@ variable : ID
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName(),"variable");
 		log("ID LTHIRD expression RTHIRD",$$);
 		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
-		if(foundSymbol->getGroup().compare(GROUP_VARIABLE)==0){
+		if(foundSymbol!=NULL && foundSymbol->getGroup().compare(GROUP_VARIABLE)==0){
 			logFile<<"Error at line "<<lineCount<<": "<<$1->getName()<<" is not an array"<<endl<<endl<<$$->getName()<<endl<<endl;
 			errorFile<<"Error at line "<<lineCount<<": "<<$1->getName()<<" is not an array"<<endl<<endl;
 			errorCount++;
@@ -826,8 +829,8 @@ factor	: variable
 		SymbolInfo *foundSymbol=symbolTable->lookup($1->getName());
 		log("ID LPAREN argument_list RPAREN",$$);
 		if(foundSymbol==NULL){
-			logFile<<"Error at line "<<lineCount<<": Undeclared function : "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
-			errorFile<<"Error at line "<<lineCount<<": Undeclared function : "<<$1->getName()<<endl<<endl;
+			logFile<<"Error at line "<<lineCount<<": Undeclared function "<<$1->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Undeclared function "<<$1->getName()<<endl<<endl;
 			errorCount++;
 			$$->setVariant(VARIANT_UNDEFINED);
 		}else if(foundSymbol->getGroup().compare(GROUP_ARRAY)==0 || foundSymbol->getGroup().compare(GROUP_VARIABLE)==0){
@@ -856,8 +859,8 @@ factor	: variable
 			}else{
 				for(int i=0;i<$3->getChildSymbols().size();i++){
 					if($3->getChildSymbols()[i]->getGroup().compare(GROUP_ARRAY)==0){
-						logFile<<"Error at line "<<lineCount<<": Type mismatch: "<<$3->getChildSymbols()[i]->getName()<<" is an array"<<endl<<endl<<$$->getName()<<endl<<endl;
-						errorFile<<"Error at line "<<lineCount<<": Type mismatch: "<<$3->getChildSymbols()[i]->getName()<<" is an array"<<endl<<endl;
+						logFile<<"Error at line "<<lineCount<<": Type mismatch, "<<$3->getChildSymbols()[i]->getName()<<" is an array"<<endl<<endl<<$$->getName()<<endl<<endl;
+						errorFile<<"Error at line "<<lineCount<<": Type mismatch, "<<$3->getChildSymbols()[i]->getName()<<" is an array"<<endl<<endl;
 						errorCount++;
 						break;
 					}

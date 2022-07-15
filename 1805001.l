@@ -130,14 +130,15 @@ SingleQuot \'
     return LOGICOP;
 }
 
-([+/-](" "|\t)*[=])+ {
-    unrecognizedCharError(string(yytext,strlen(yytext)));
+([\*+/-](" "|\t)*[=])([\*+/-]*(" "|\t)*[=]*)* {
+    syntaxError();
     return UNRECOGNIZED_OPERATOR;
 }
 
 
-([`#~@$^&](" "|\t)*)+ {
-    syntaxError();
+
+([`#~@$^](" "|\t)*)+ {
+    unrecognizedCharError(string(yytext,strlen(yytext)));
 }
 
 ("!") {
@@ -157,6 +158,8 @@ SingleQuot \'
     yylval=(YYSTYPE)symbolInfo;
     return ID;
 }
+
+
 
 {Integer} {
     SymbolInfo * symbolInfo=(YYSTYPE)new SymbolInfo(string(yytext,strlen(yytext)),"CONST_INT");
