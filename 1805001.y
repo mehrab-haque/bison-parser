@@ -93,7 +93,6 @@ void syntaxError(){
 
 
 int nLines(string s){
-	cout<<s[s.size()-2]<<s[s.size()-1]<<endl;
 	int n=0;
 	for(int i=0;i<s.size();i++)
 		if(s[i]=='\n')
@@ -680,7 +679,6 @@ logic_expression : rel_expression
 		}
 	}	
 	| rel_expression UNRECOGNIZED_OPERATOR rel_expression {
-		//cout<<$3->getName()<<endl;
 		isError=true;
 		$$=new SymbolInfo($1->getName(),"logic_expression");
 		$$->setVariant($1->getVariant());
