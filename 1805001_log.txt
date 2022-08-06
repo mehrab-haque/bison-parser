@@ -51,294 +51,239 @@ Line 3: type_specifier : INT
 
 int
 
-Line 3: type_specifier : INT
+Line 4: type_specifier : INT
 
 int
 
-Line 3: parameter_list : type_specifier
+Line 4: declaration_list : ID
 
-int
+x
 
-Error at line 3: syntax error
+Line 4: declaration_list : declaration_list COMMA ID
 
-int
+x,y
 
-int
+Line 4: declaration_list : declaration_list COMMA ID
 
-Line 4: compound_statement : LCURL RCURL
+x,y,z
 
-{
-}
-
-ScopeTable# 1.1
-
-ScopeTable# 1
-1 --> < x : ID >
-2 --> < y : ID >
-3 --> < z : ID >
-6 --> < a : ID >
-
-Error at line 3: 1th parameter's name not given in function definition of var
-
-Line 4: func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
-
-int var(int){
-}
-
-Line 4: unit : func_definition
-
-int var(int){
-}
-
-Line 4: program : program unit
+Line 4: var_declaration : type_specifier declaration_list SEMICOLON
 
 int x,y,z;
-float a;
-int var(int){
-}
 
-Line 7: type_specifier : INT
+Line 4: statement : var_declaration
 
-int
+int x,y,z;
 
-Line 8: type_specifier : INT
+Line 4: statements : statement
 
-int
+int x,y,z;
 
-Line 8: declaration_list : ID
-
-x
-
-Line 8: declaration_list : declaration_list var_declaration_invalid_delimiters ID
-
-x
-
-Error at line 8: syntax error
-
-x
-
-x
-
-x
-
-Line 8: declaration_list : declaration_list COMMA ID
-
-x,z
-
-Line 8: var_declaration : type_specifier declaration_list SEMICOLON
-
-int x,z;
-
-Line 8: statement : var_declaration
-
-int x,z;
-
-Line 8: statements : statement
-
-int x,z;
-
-Line 9: variable : ID
+Line 5: variable : ID
 
 a
 
-Line 9: factor : CONST_INT
+Line 5: factor : CONST_INT
 
 2
 
-Line 9: unary_expression : factor
+Line 5: unary_expression : factor
 
 2
 
-Line 9: term : unary_expression
+Line 5: term : unary_expression
 
 2
 
-Error at line 9: syntax error
-
-Line 9: simple_expression : term
+Line 5: simple_expression : term
 
 2
 
-Line 9: rel_expression : simple_expression
-
-2
-
-Line 9: factor : CONST_INT
+Line 5: factor : CONST_INT
 
 6
 
-Line 9: unary_expression : factor
+Line 5: unary_expression : factor
 
 6
 
-Line 9: term : unary_expression
+Line 5: term : unary_expression
 
 6
 
-Error at line 10: Unrecognized character #
+Line 5: simple_expression : simple_expression ADDOP term
 
-Line 11: simple_expression : term
+2+6
 
-6
+Line 5: rel_expression : simple_expression
 
-Line 11: rel_expression : simple_expression
+2+6
 
-6
+Line 5: logic_expression : rel_expression
 
-Line 11: statement : expression_statement
+2+6
 
+Line 5: expression : variable ASSIGNOP logic_expression
 
+a=2+6
 
-Line 11: statements : statements statement
+Line 5: expression_statement : expression SEMICOLON
 
-int x,z;
+a=2+6;
 
+Line 5: statement : expression_statement
 
-Line 11: variable : ID
+a=2+6;
+
+Line 5: statements : statements statement
+
+int x,y,z;
+a=2+6;
+
+Line 6: variable : ID
 
 x
 
-Line 11: factor : CONST_INT
+Line 6: factor : CONST_INT
 
 2
 
-Line 11: unary_expression : factor
+Line 6: unary_expression : factor
 
 2
 
-Line 11: term : unary_expression
+Line 6: term : unary_expression
 
 2
 
-Line 11: simple_expression : term
+Line 6: simple_expression : term
 
 2
 
-Line 11: rel_expression : simple_expression
+Line 6: rel_expression : simple_expression
 
 2
 
-Line 11: logic_expression : rel_expression
+Line 6: logic_expression : rel_expression
 
 2
 
-Line 11: expression : variable ASSIGNOP logic_expression
+Line 6: expression : variable ASSIGNOP logic_expression
 
 x=2
 
-Line 11: expression_statement : expression SEMICOLON
+Line 6: expression_statement : expression SEMICOLON
 
 x=2;
 
-Line 11: statement : expression_statement
+Line 6: statement : expression_statement
 
 x=2;
 
-Line 11: statements : statements statement
+Line 6: statements : statements statement
 
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 
-Line 14: factor : CONST_INT
+Line 7: factor : CONST_INT
 
 0
 
-Line 14: unary_expression : factor
+Line 7: unary_expression : factor
 
 0
 
-Line 14: term : unary_expression
+Line 7: term : unary_expression
 
 0
 
-Line 14: simple_expression : term
+Line 7: simple_expression : term
 
 0
 
-Line 14: rel_expression : simple_expression
+Line 7: rel_expression : simple_expression
 
 0
 
-Line 14: logic_expression : rel_expression
+Line 7: logic_expression : rel_expression
 
 0
 
-Line 14: expression : logic_expression
+Line 7: expression : logic_expression
 
 0
 
-Line 14: statement : RETURN expression SEMICOLON
+Line 7: statement : RETURN expression SEMICOLON
 
 return 0;
 
-Line 14: statements : statements statement
+Line 7: statements : statements statement
 
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 return 0;
 
-Line 15: compound_statement : LCURL statements RCURL
+Line 8: compound_statement : LCURL statements RCURL
 
 {
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 return 0;
 }
 
-ScopeTable# 1.2
+ScopeTable# 1.1
 1 --> < x : ID >
+2 --> < y : ID >
 3 --> < z : ID >
 
 ScopeTable# 1
 1 --> < x : ID >
 2 --> < y : ID >
-3 --> < z : ID >< var : ID >
+3 --> < z : ID >
 6 --> < a : ID >
 
-Line 15: func_definition : type_specifier ID LPAREN RPAREN compound_statement
+Line 8: func_definition : type_specifier ID LPAREN RPAREN compound_statement
 
 int main(){
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 return 0;
 }
 
-Line 15: unit : func_definition
+Line 8: unit : func_definition
 
 int main(){
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 return 0;
 }
 
-Line 15: program : program unit
+Line 8: program : program unit
 
 int x,y,z;
 float a;
-int var(int){
-}
 int main(){
-int x,z;
-
+int x,y,z;
+a=2+6;
 x=2;
 return 0;
 }
 
-Line 15: start : program
+Line 8: start : program
 
 
 
 ScopeTable# 1
 1 --> < x : ID >
 2 --> < y : ID >
-3 --> < z : ID >< var : ID >
+3 --> < z : ID >
 5 --> < main : ID >
 6 --> < a : ID >
 
-Total lines: 15
-Total errors: 5
+Total lines: 8
+Total errors: 0
