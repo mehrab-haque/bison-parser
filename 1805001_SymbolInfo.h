@@ -17,6 +17,7 @@ class SymbolInfo{
 	string type;
 	string variant;
 	string group;
+	int offset;
 
 	vector<SymbolInfo*> childSymbols;
 
@@ -37,6 +38,8 @@ class SymbolInfo{
 		string print();
 		void setVariant(string s);
 		string getVariant();
+		void setOffset(int o);
+		int getOffset();
 		void setGroup(string group);
 		string getGroup();
 		~SymbolInfo();	

@@ -83,112 +83,54 @@ Line 4: statements : statement
 
 int x,y,z;
 
-Line 5: variable : ID
-
-a
-
-Line 5: factor : CONST_INT
-
-2
-
-Line 5: unary_expression : factor
-
-2
-
-Line 5: term : unary_expression
-
-2
-
-Line 5: simple_expression : term
-
-2
-
-Line 5: factor : CONST_INT
-
-6
-
-Line 5: unary_expression : factor
-
-6
-
-Line 5: term : unary_expression
-
-6
-
-Line 5: simple_expression : simple_expression ADDOP term
-
-2+6
-
-Line 5: rel_expression : simple_expression
-
-2+6
-
-Line 5: logic_expression : rel_expression
-
-2+6
-
-Line 5: expression : variable ASSIGNOP logic_expression
-
-a=2+6
-
-Line 5: expression_statement : expression SEMICOLON
-
-a=2+6;
-
-Line 5: statement : expression_statement
-
-a=2+6;
-
-Line 5: statements : statements statement
-
-int x,y,z;
-a=2+6;
-
 Line 6: variable : ID
 
 x
 
-Line 6: factor : CONST_INT
+Line 6: variable : ID
 
-2
+y
+
+Line 6: factor : variable INCOP
+
+y++
 
 Line 6: unary_expression : factor
 
-2
+y++
 
 Line 6: term : unary_expression
 
-2
+y++
 
 Line 6: simple_expression : term
 
-2
+y++
 
 Line 6: rel_expression : simple_expression
 
-2
+y++
 
 Line 6: logic_expression : rel_expression
 
-2
+y++
 
 Line 6: expression : variable ASSIGNOP logic_expression
 
-x=2
+x=y++
 
 Line 6: expression_statement : expression SEMICOLON
 
-x=2;
+x=y++;
 
 Line 6: statement : expression_statement
 
-x=2;
+x=y++;
 
 Line 6: statements : statements statement
 
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 
 Line 7: factor : CONST_INT
 
@@ -225,16 +167,14 @@ return 0;
 Line 7: statements : statements statement
 
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 return 0;
 
 Line 8: compound_statement : LCURL statements RCURL
 
 {
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 return 0;
 }
 
@@ -254,8 +194,7 @@ Line 8: func_definition : type_specifier ID LPAREN RPAREN compound_statement
 
 int main(){
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 return 0;
 }
 
@@ -263,8 +202,7 @@ Line 8: unit : func_definition
 
 int main(){
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 return 0;
 }
 
@@ -274,8 +212,7 @@ int x,y,z;
 float a,b[100];
 int main(){
 int x,y,z;
-a=2+6;
-x=2;
+x=y++;
 return 0;
 }
 

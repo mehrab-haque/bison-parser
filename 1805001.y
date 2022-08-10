@@ -40,6 +40,8 @@ bool isVoidFunction=false;
 
 string variableType;
 
+int offset=0;
+
 void yyerror(char *s)
 {
 	//write your code
@@ -280,7 +282,8 @@ declaration_list : declaration_list COMMA ID
 			if(symbolTable->getCurrentScopeId()=="1"){
 				insertCode($3->getName()+" DW ?");
 			}else{
-				
+				offset+=2;
+				newSymbol->setOffset(offset);
 			}
 		}
 	}
@@ -300,7 +303,8 @@ declaration_list : declaration_list COMMA ID
 			if(symbolTable->getCurrentScopeId()=="1"){
 				insertCode($3->getName()+" DW "+$5->getName()+" DUP(?)");
 			}else{
-				
+				offset+=2;
+				newSymbol->setOffset(offset);
 			}
 		}
 	}
@@ -328,7 +332,8 @@ declaration_list : declaration_list COMMA ID
 			if(symbolTable->getCurrentScopeId()=="1"){
 				insertCode($1->getName()+" DW ?");
 			}else{
-				
+				offset+=2;
+				newSymbol->setOffset(offset);
 			}
 		}
 	}
@@ -348,7 +353,8 @@ declaration_list : declaration_list COMMA ID
 			if(symbolTable->getCurrentScopeId()=="1"){
 				insertCode($1->getName()+" DW "+$3->getName()+" DUP(?)");
 			}else{
-				
+				offset+=2;
+				newSymbol->setOffset(offset);
 			}
 		}
 	}
@@ -624,6 +630,7 @@ variable : ID
 		}else{
 			$$->setGroup(foundSymbol->getGroup());
 			$$->setVariant(foundSymbol->getVariant());
+			$$->setOffset(foundSymbol->getOffset());
 		}
 	}		
 	| ID LTHIRD expression RTHIRD
@@ -647,6 +654,7 @@ variable : ID
 		}else{
 			$$->setGroup(GROUP_VARIABLE);
 			$$->setVariant(foundSymbol->getVariant());
+			$$->setOffset(foundSymbol->getOffset());
 		}
 		if($3->getVariant().compare(VARIANT_INT)!=0){
 			logFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl<<$$->getName()<<endl<<endl;
@@ -660,6 +668,7 @@ expression : logic_expression
 	{
 		$$=new SymbolInfo($1->getName(),"expression");
 		$$->setVariant($1->getVariant());
+		$$->setOffset($1->getOffset());
 		if(!isError)log("logic_expression",$$);
 		$$->setGroup($1->getGroup());
 	}	
@@ -680,6 +689,10 @@ expression : logic_expression
 		}
 		$$->setVariant(VARIANT_INT);
 		$$->setGroup($1->getGroup());
+
+		insertCode("MOV AX, [BP-"+to_string($3->getOffset())+"]");
+		insertCode("MOV WORD PTR [BP-"+to_string($1->getOffset())+"],AX");
+
 		if(isVoidFunction){
 			isVoidFunction=false;
 			logFile<<"Error at line "<<lineCount<<": Void function used in expression"<<endl<<endl<<$$->getName()<<endl<<endl;
@@ -694,6 +707,7 @@ logic_expression : rel_expression
 		isError=false;
 		$$=new SymbolInfo($1->getName(),"logic_expression");
 		$$->setVariant($1->getVariant());
+		$$->setOffset($1->getOffset());
 		log("rel_expression",$$);
 		$$->setGroup($1->getGroup());
 	}	
@@ -735,6 +749,7 @@ rel_expression	: simple_expression
 	{
 		$$=new SymbolInfo($1->getName(),"rel_expression");
 		$$->setVariant($1->getVariant());
+		$$->setOffset($1->getOffset());
 		log("simple_expression",$$);
 		$$->setGroup($1->getGroup());
 	} 
@@ -757,6 +772,7 @@ simple_expression : term
 	{
 		$$=new SymbolInfo($1->getName(),"simple_expression");
 		$$->setVariant($1->getVariant());
+		$$->setOffset($1->getOffset());
 		log("term",$$);
 		$$->setGroup($1->getGroup());
 	}
@@ -784,6 +800,7 @@ term :	unary_expression
 		$$=new SymbolInfo($1->getName(),"term");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
+		$$->setOffset($1->getOffset());
 		log("unary_expression",$$);
 	}
      |  term MULOP unary_expression
@@ -847,6 +864,7 @@ unary_expression : ADDOP unary_expression
 		$$=new SymbolInfo($1->getName(),"unary_expression");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
+		$$->setOffset($1->getOffset());
 		log("factor",$$);
 	} 
 	;
@@ -857,6 +875,7 @@ factor	: variable
 		log("variable",$$);
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
+		$$->setOffset($1->getOffset());
 	}
 	| ID LPAREN argument_list RPAREN
 	{
@@ -917,6 +936,7 @@ factor	: variable
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"factor");
 		$$->setVariant($2->getVariant());
 		$$->setGroup($2->getGroup());
+		$$->setOffset($2->getOffset());
 		log("LPAREN expression RPAREN",$$);
 	}
 	| CONST_INT
@@ -924,6 +944,8 @@ factor	: variable
 		isVoidFunction=false;
 		$$=new SymbolInfo($1->getName(),"factor");
 		$$->setVariant(VARIANT_INT);
+		offset+=2;
+		$$->setOffset(offset);
 		$$->setGroup(GROUP_VARIABLE);
 		log("CONST_INT",$$);
 	} 
@@ -933,6 +955,8 @@ factor	: variable
 		$$=new SymbolInfo($1->getName(),"factor");
 		$$->setVariant(VARIANT_FLOAT);
 		$$->setGroup(GROUP_VARIABLE);
+		offset+=2;
+		$$->setOffset(offset);
 		log("CONST_FLOAT",$$);
 	}
 	| variable INCOP{
@@ -940,6 +964,10 @@ factor	: variable
 		$$=new SymbolInfo($1->getName()+$2->getName(),"factor");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
+		insertCode("MOV AX, [BP-"+to_string($1->getOffset())+"]");
+		insertCode("ADD AX, 1");
+		insertCode("MOV WORD PTR [BP-"+to_string($1->getOffset())+"], AX");
+		$$->setOffset($1->getOffset());
 		log("variable INCOP",$$);
 	} 
 	| variable DECOP
@@ -948,6 +976,10 @@ factor	: variable
 		$$=new SymbolInfo($1->getName()+$2->getName(),"factor");
 		$$->setVariant($1->getVariant());
 		$$->setGroup($1->getGroup());
+		insertCode("MOV AX, [BP-"+to_string($1->getOffset())+"]");
+		insertCode("SUB AX, 1");
+		insertCode("MOV WORD PTR [BP-"+to_string($1->getOffset())+"], AX");
+		$$->setOffset($1->getOffset());
 		log("variable DECOP",$$);
 	}
 	;

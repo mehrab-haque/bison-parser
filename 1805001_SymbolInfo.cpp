@@ -65,3 +65,11 @@ void SymbolInfo::setGroup(string group){
 string SymbolInfo::getGroup(){
 	return this->group;
 }
+
+void SymbolInfo::setOffset(int o){
+	this->offset=o;
+}
+
+int SymbolInfo::getOffset(){
+	return this->offset;
+}
