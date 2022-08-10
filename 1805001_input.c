@@ -1,4 +1,4 @@
-int x,y,z; float a;
+int x,y,z; float a,b[100];
 
 int main(){
 	int x,y,z;

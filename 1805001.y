@@ -19,7 +19,7 @@ extern FILE *yyin;
 int lineCount=1;
 int errorCount=0;
 
-ofstream logFile,errorFile;
+ofstream logFile,errorFile,codeFile;
 
 SymbolTable *symbolTable;
 
@@ -38,6 +38,8 @@ const string VARIABLE_NAME_NULL="<null>";
 bool isError=false;
 bool isVoidFunction=false;
 
+string variableType;
+
 void yyerror(char *s)
 {
 	//write your code
@@ -45,20 +47,6 @@ void yyerror(char *s)
 
 void log(string rule,SymbolInfo *symbolInfo){
 	logFile<<"Line "<<lineCount<<": "<<symbolInfo->getType()<<" : "<<rule<<endl<<endl<<symbolInfo->getName()<<endl<<endl;
-}
-
-void insertVariablesToTable(SymbolInfo *type,vector<SymbolInfo*> symbols,string code){
-	for(int i=0;i<symbols.size();i++){
-		SymbolInfo *newSymbol=new SymbolInfo(symbols[i]->getName(),"ID");
-		newSymbol->setVariant(type->getName());
-		newSymbol->setGroup(symbols[i]->getGroup());
-		bool isInserted=symbolTable->insertSymbol(newSymbol);
-		if(!isInserted){
-			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
-			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
-			errorCount++;
-		}
-	}
 }
 
 void insertFunctionDeclarationToTable(SymbolInfo *type,SymbolInfo *funcId,vector<SymbolInfo*> params,string code){
@@ -152,6 +140,14 @@ void insertFunctionDefinitionToTable(SymbolInfo *type,SymbolInfo *funcId,vector<
 		errorFile<<"Error at line "<<lineCount-nLines(code)<<": Multiple declaration of "<<funcSymbol->getName()<<endl<<endl;
 		errorCount++;
 	}
+}
+
+void initCode(){
+	codeFile<<".MODEL SMALL"<<endl<<endl<<".STACK 100H"<<endl<<".DATA"<<endl;
+}
+
+void insertCode(string code){
+	codeFile<<code<<endl;
 }
 
 
@@ -259,7 +255,6 @@ temp_rule : LCURL {
 var_declaration : type_specifier declaration_list SEMICOLON
      {
 		$$=new SymbolInfo($1->getName()+" "+$2->getName()+$3->getName(),"var_declaration");
-		insertVariablesToTable($1,$2->getChildSymbols(),$$->getName());
 		log("type_specifier declaration_list SEMICOLON",$$);
 		if($1->getName().compare(VARIANT_VOID)==0){
 			logFile<<"Error at line "<<lineCount<<": Variable type cannot be void"<<endl<<endl<<$$->getName()<<endl<<endl;
@@ -272,26 +267,46 @@ var_declaration : type_specifier declaration_list SEMICOLON
 declaration_list : declaration_list COMMA ID
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
-		$3->setGroup(GROUP_VARIABLE);
-		$$->addChildSymbol($3);
 		log("declaration_list COMMA ID",$$);	
+		SymbolInfo *newSymbol=new SymbolInfo($3->getName(),"ID");
+		newSymbol->setVariant(variableType);
+		newSymbol->setGroup(GROUP_VARIABLE);
+		bool isInserted=symbolTable->insertSymbol(newSymbol);
+		if(!isInserted){
+			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorCount++;
+		}else{
+			if(symbolTable->getCurrentScopeId()=="1"){
+				insertCode($3->getName()+" DW ?");
+			}else{
+				
+			}
+		}
 	}
 	| declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
-		$3->setGroup(GROUP_ARRAY);
-		$$->addChildSymbol($3);
 		log("declaration_list COMMA ID LTHIRD CONST_INT RTHIRD",$$);
+		SymbolInfo *newSymbol=new SymbolInfo($3->getName(),"ID");
+		newSymbol->setVariant(variableType);
+		newSymbol->setGroup(GROUP_ARRAY);
+		bool isInserted=symbolTable->insertSymbol(newSymbol);
+		if(!isInserted){
+			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorCount++;
+		}else{
+			if(symbolTable->getCurrentScopeId()=="1"){
+				insertCode($3->getName()+" DW "+$5->getName()+" DUP(?)");
+			}else{
+				
+			}
+		}
 	}
 	| declaration_list COMMA ID LTHIRD CONST_FLOAT RTHIRD
 	{
 		$$=new SymbolInfo($1->getName()+$2->getName()+$3->getName()+$4->getName()+$5->getName()+$6->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
 		log("declaration_list COMMA ID LTHIRD CONST_FLOAT RTHIRD",$$);
 		logFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl<<$$->getName()<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": Expression inside third brackets not an integer"<<endl<<endl;
@@ -300,21 +315,45 @@ declaration_list : declaration_list COMMA ID
 	| ID
 	{
 		$$=new SymbolInfo($1->getName(),"declaration_list");
-		$1->setGroup(GROUP_VARIABLE);
-		$$->addChildSymbol($1);
 		log("ID",$$);
+		SymbolInfo *newSymbol=new SymbolInfo($1->getName(),"ID");
+		newSymbol->setVariant(variableType);
+		newSymbol->setGroup(GROUP_VARIABLE);
+		bool isInserted=symbolTable->insertSymbol(newSymbol);
+		if(!isInserted){
+			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorCount++;
+		}else{
+			if(symbolTable->getCurrentScopeId()=="1"){
+				insertCode($1->getName()+" DW ?");
+			}else{
+				
+			}
+		}
 	}
 	| ID LTHIRD CONST_INT RTHIRD
 	{
 		$$=new SymbolInfo($1->getName(),"declaration_list");
-		$1->setGroup(GROUP_ARRAY);
-		$$->addChildSymbol($1);
 		log("ID",$$);
+		SymbolInfo *newSymbol=new SymbolInfo($1->getName(),"ID");
+		newSymbol->setVariant(variableType);
+		newSymbol->setGroup(GROUP_ARRAY);
+		bool isInserted=symbolTable->insertSymbol(newSymbol);
+		if(!isInserted){
+			logFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorFile<<"Error at line "<<lineCount<<": Multiple declaration of "<<newSymbol->getName()<<endl<<endl;
+			errorCount++;
+		}else{
+			if(symbolTable->getCurrentScopeId()=="1"){
+				insertCode($1->getName()+" DW "+$3->getName()+" DUP(?)");
+			}else{
+				
+			}
+		}
 	}
 	| declaration_list var_declaration_invalid_delimiters ID {
 		$$=new SymbolInfo($1->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
 		log("declaration_list var_declaration_invalid_delimiters ID",$$);
 		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
@@ -322,8 +361,6 @@ declaration_list : declaration_list COMMA ID
 	}
 	| declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_INT RTHIRD {
 		$$=new SymbolInfo($1->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
 		log("declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_INT RTHIRD",$$);
 		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
@@ -332,8 +369,6 @@ declaration_list : declaration_list COMMA ID
 	|
 	declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_FLOAT RTHIRD {
 		$$=new SymbolInfo($1->getName(),"declaration_list");
-		for(int i=0;i<$1->getChildSymbols().size();i++)
-			$$->addChildSymbol($1->getChildSymbols()[i]);
 		log("declaration_list var_declaration_invalid_delimiters ID LTHIRD CONST_FLOAT RTHIRD",$$);
 		logFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl<<$$->getName()<<endl<<endl;
 		errorFile<<"Error at line "<<lineCount<<": syntax error"<<endl<<endl;
@@ -445,16 +480,19 @@ type_specifier	: INT
 		{
 			$$=new SymbolInfo($1->getName(),"type_specifier");
 			log("INT",$$);
+			variableType="int";
 		}
  		| FLOAT
 		{
 			$$=new SymbolInfo($1->getName(),"type_specifier");
 			log("FLOAT",$$);
+			variableType="float";
 		}
  		| VOID 
 		{
 			$$=new SymbolInfo($1->getName(),"type_specifier");
 			log("VOID",$$);
+			variableType="void";
 		}
  		;
 
@@ -966,6 +1004,9 @@ int main(int argc,char *argv[])
 
 	logFile.open("1805001_log.txt");
 	errorFile.open("1805001_error.txt");
+	codeFile.open("1805001_code.asm");
+
+	initCode();
 
 	yyin=fp;
 	yyparse();
@@ -973,6 +1014,8 @@ int main(int argc,char *argv[])
 
 	fclose(fp);
 	logFile.close();
+	errorFile.close();
+	codeFile.close();
 	
 	return 0;
 }

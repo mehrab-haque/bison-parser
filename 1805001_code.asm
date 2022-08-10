@@ -1,0 +1,9 @@
+.MODEL SMALL
+
+.STACK 100H
+.DATA
+x DW ?
+y DW ?
+z DW ?
+a DW ?
+b DW 100 DUP(?)
